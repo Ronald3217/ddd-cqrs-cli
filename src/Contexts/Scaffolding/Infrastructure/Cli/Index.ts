@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Command } from 'commander';
 import * as path from 'path';
 import { ScaffoldingError } from '@/Contexts/Scaffolding/Domain/ScaffoldingError';
