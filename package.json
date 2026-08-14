@@ -1,0 +1,31 @@
+{
+  "name": "ddd-cqrs-cli",
+  "version": "0.1.0",
+  "description": "Portable DDD-CQRS scaffolding generator",
+  "type": "commonjs",
+  "main": "dist/Contexts/Scaffolding/Infrastructure/Cli/Index.js",
+  "bin": {
+    "ddd-cqrs": "./dist/Contexts/Scaffolding/Infrastructure/Cli/Index.js"
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "ddd-cqrs": "tsx src/Contexts/Scaffolding/Infrastructure/Cli/Index.ts"
+  },
+  "keywords": [
+    "ddd",
+    "cqrs",
+    "scaffolding",
+    "cli",
+    "generator"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "tsc-alias": "1.8.16",
+    "tsx": "^4.21.0",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "CommonJS",
+        "moduleResolution": "bundler",
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ]
+        },
+        "types": ["node"],
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
