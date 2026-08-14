@@ -23,6 +23,11 @@
     "generator"
   ],
   "license": "MIT",
+  "author": "Ronald3217",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ronald3217/ddd-cqrs-cli.git"
+  },
   "dependencies": {
     "commander": "^15.0.0"
   },
