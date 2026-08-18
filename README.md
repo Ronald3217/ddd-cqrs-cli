@@ -507,7 +507,16 @@ npx tsx --tsconfig F:/path/to/ddd-cqrs-cli/tsconfig.json F:/path/to/ddd-cqrs-cli
 
 ## Publishing
 
-The package is publish-ready:
+Published as **`ddd-cqrs-cli@0.1.0`** (npm) with GitHub Release **`v0.1.0`**
+(<https://github.com/Ronald3217/ddd-cqrs-cli/releases/tag/v0.1.0>).
+
+> **Compatibility:** this release targets projects that already have the DDD/CQRS
+> Shared Kernel (`src/Contexts/Shared/**`), the `@/*` tsconfig paths, and a dependency
+> container with the wiring markers. Greenfield projects are NOT supported yet —
+> `ddd-cqrs init` (kernel + tsconfig + container bootstrap) and
+> `gen module --events` are planned for `0.2.x`.
+
+The package ships `dist/` only and rebuilds on every publish:
 
 ```json
 {
@@ -518,11 +527,13 @@ The package is publish-ready:
 }
 ```
 
-`prepublishOnly` rebuilds `dist/` before every publish, and only `dist/` is shipped.
+Release workflow (the changelog is the source of truth):
 
 ```bash
-npm login
-npm publish
+# 1. Update CHANGELOG.md (Keep a Changelog 1.1.0)
+# 2. npm run build && npm publish     # account ronald3217, 2FA → --otp=<code>
+# 3. git tag -a vX.Y.Z -F <message> && git push origin vX.Y.Z
+# 4. gh release create vX.Y.Z -F <message> --title "vX.Y.Z"
 ```
 
 Post-publish consumption:
