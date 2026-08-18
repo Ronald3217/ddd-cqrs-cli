@@ -2,7 +2,7 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 import type { FieldSpec } from '@/Contexts/Scaffolding/Domain/FieldSpec';
 import { tsType, fieldLabel } from './TypeMappings';
 
-export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[], owned: boolean): string {
+export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[]): string {
   const { entity } = names;
 
   const primitivesProps = fields
@@ -12,16 +12,16 @@ export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[], ow
     .map((f) => `  ${f.name}?: ${tsType(f.type)};`)
     .join('\n');
   const privateFields = fields
-    .map((f) => `  private _${f.name}: ${tsType(f.type)};`)
+    .map((f) => `  #${f.name}: ${tsType(f.type)};`)
     .join('\n');
   const getters = fields
-    .map((f) => `  get ${f.name}(): ${tsType(f.type)} { return this._${f.name}; }`)
+    .map((f) => `  get ${f.name}(): ${tsType(f.type)} { return this.#${f.name}; }`)
     .join('\n');
   const ctorParams = fields
     .map((f) => `    ${f.name}: ${tsType(f.type)},`)
     .join('\n');
   const ctorAssignments = fields
-    .map((f) => `    this._${f.name} = ${f.name};`)
+    .map((f) => `    this.#${f.name} = ${f.name};`)
     .join('\n');
   const createProps = fields
     .map((f) => `    ${f.name}: ${tsType(f.type)};`)
@@ -33,7 +33,7 @@ export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[], ow
     .map((f) => `      p.${f.name},`)
     .join('\n');
   const toPrimitivesEntries = fields
-    .map((f) => `      ${f.name}: this._${f.name},`)
+    .map((f) => `      ${f.name}: this.#${f.name},`)
     .join('\n');
   const updateCalls = fields
     .map((f) => `    if (data.${f.name} !== undefined) this.change${fieldLabel(f.name)}(data.${f.name});`)
@@ -41,21 +41,12 @@ export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[], ow
   const changeMethods = fields
     .map((f) => {
       return `  change${fieldLabel(f.name)}(v: ${tsType(f.type)}): void {
-    if (this._${f.name} === v) return;
-    this._${f.name} = v;
-    this._markAsUpdated();
+    if (this.#${f.name} === v) return;
+    this.#${f.name} = v;
+    this.#markAsUpdated();
   }`;
     })
     .join('\n\n');
-
-  const ownerIdPrimitive = owned ? `  ownerId: string;\n` : '';
-  const ownerIdField = owned ? `  public readonly ownerId: DocumentId;\n` : '';
-  const ownerIdCtorParam = owned ? `    ownerId: DocumentId,\n` : '';
-  const ownerIdCtorAssign = owned ? `    this.ownerId = ownerId;\n` : '';
-  const ownerIdCreateProp = owned ? `    ownerId: string;\n` : '';
-  const ownerIdCreateArg = owned ? `      new DocumentId(props.ownerId),\n` : '';
-  const ownerIdFromPrimArg = owned ? `      new DocumentId(p.ownerId),\n` : '';
-  const ownerIdToPrimEntry = owned ? `      ownerId: this.ownerId.value,\n` : '';
 
   return `import { AggregateRoot } from '@/Contexts/Shared/Domain/AggregateRoot';
 import { DocumentId } from '@/Contexts/Shared/Domain/ValueObjects/DocumentId';
@@ -65,7 +56,7 @@ import { IdGenerator } from '@/Contexts/Shared/Domain/IdGenerator';
 export interface ${entity}Primitives {
   id: string;
 ${primitivesProps}
-${ownerIdPrimitive}  createdAt: Date;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -75,36 +66,36 @@ ${updateProps}
 
 export class ${entity} extends AggregateRoot {
   public readonly id: DocumentId;
-${ownerIdField}  public readonly createdAt: DateTime;
+  public readonly createdAt: DateTime;
 
 ${privateFields}
-  private _updatedAt: DateTime;
+  #updatedAt: DateTime;
 
 ${getters}
-  get updatedAt(): DateTime { return this._updatedAt; }
+  get updatedAt(): DateTime { return this.#updatedAt; }
 
   private constructor(
     id: DocumentId,
 ${ctorParams}
-${ownerIdCtorParam}    createdAt: DateTime,
+    createdAt: DateTime,
     updatedAt: DateTime,
   ) {
     super();
     this.id = id;
 ${ctorAssignments}
-${ownerIdCtorAssign}    this.createdAt = createdAt;
-    this._updatedAt = updatedAt;
+    this.createdAt = createdAt;
+    this.#updatedAt = updatedAt;
   }
 
   static create(props: {
 ${createProps}
-${ownerIdCreateProp}  }, idGenerator: IdGenerator): ${entity} {
+  }, idGenerator: IdGenerator): ${entity} {
     const id = new DocumentId(idGenerator.generate());
     const now = new DateTime(new Date());
     return new ${entity}(
       id,
 ${createArgs}
-${ownerIdCreateArg}      now,
+      now,
       now,
     );
   }
@@ -113,7 +104,7 @@ ${ownerIdCreateArg}      now,
     return new ${entity}(
       new DocumentId(p.id),
 ${fromPrimitivesArgs}
-${ownerIdFromPrimArg}      new DateTime(p.createdAt),
+      new DateTime(p.createdAt),
       new DateTime(p.updatedAt),
     );
   }
@@ -122,8 +113,8 @@ ${ownerIdFromPrimArg}      new DateTime(p.createdAt),
     return {
       id: this.id.value,
 ${toPrimitivesEntries}
-${ownerIdToPrimEntry}      createdAt: this.createdAt.value,
-      updatedAt: this._updatedAt.value,
+      createdAt: this.createdAt.value,
+      updatedAt: this.#updatedAt.value,
     };
   }
 
@@ -133,8 +124,8 @@ ${updateCalls}
 
 ${changeMethods}
 
-  private _markAsUpdated(): void {
-    this._updatedAt = new DateTime(new Date());
+  #markAsUpdated(): void {
+    this.#updatedAt = new DateTime(new Date());
   }
 }
 `;

@@ -46,54 +46,6 @@ export class Get${entity}ByIdQueryHandler implements QueryHandler<Get${entity}By
 `;
 }
 
-export function renderGetOwnedPluralQuery(names: EntityNames): string {
-  const { entity, entityPlural, entityPluralLower, context } = names;
-
-  return `import { Query } from '@/Contexts/Shared/Domain/Queries/Query';
-import { Response } from '@/Contexts/Shared/Domain/Response';
-import { ${entity}Primitives } from '@/Contexts/${context}/${entity}/Domain/${entity}';
-
-export class GetOwned${entityPlural}Response implements Response {
-  constructor(
-    public readonly ${entityPluralLower}: ${entity}Primitives[],
-    public readonly total: number,
-  ) {}
-}
-
-export class GetOwned${entityPlural}Query extends Query {
-  constructor(
-    public readonly ownerId: string,
-    public readonly page: number = 1,
-    public readonly itemsPerPage: number = 10,
-  ) {
-    super();
-  }
-}
-`;
-}
-
-export function renderGetOwnedPluralQueryHandler(names: EntityNames): string {
-  const { entity, entityPlural, entityPluralLower, entityCamel, context } = names;
-
-  return `import { QueryHandler } from '@/Contexts/Shared/Domain/Queries/QueryHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { GetOwned${entityPlural}Query, GetOwned${entityPlural}Response } from '@/Contexts/${context}/${entity}/Application/Queries/GetOwned${entityPlural}/GetOwned${entityPlural}Query';
-
-export class GetOwned${entityPlural}QueryHandler implements QueryHandler<GetOwned${entityPlural}Query, GetOwned${entityPlural}Response> {
-  constructor(private readonly ${entityCamel}Repository: ${entity}Repository) {}
-
-  async handle(query: GetOwned${entityPlural}Query): Promise<GetOwned${entityPlural}Response> {
-    const ${entityPluralLower} = await this.${entityCamel}Repository.findAllByOwner(query.ownerId);
-    return new GetOwned${entityPlural}Response(${entityPluralLower}.map((e) => e.toPrimitives()), ${entityPluralLower}.length);
-  }
-
-  subscribedTo(): new (...args: any[]) => GetOwned${entityPlural}Query {
-    return GetOwned${entityPlural}Query;
-  }
-}
-`;
-}
-
 export function renderGenericQuery(names: EntityNames, action: string, fields: FieldSpec[]): string {
   const { entity, entityCamel, context } = names;
   const className = `${action}${entity}Query`;

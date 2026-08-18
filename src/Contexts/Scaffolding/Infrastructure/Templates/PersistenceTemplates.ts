@@ -2,20 +2,9 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 import type { FieldSpec } from '@/Contexts/Scaffolding/Domain/FieldSpec';
 import { mongooseType } from './TypeMappings';
 
-export function renderMongoDBRepository(names: EntityNames, fields: FieldSpec[], owned: boolean): string {
+export function renderMongoDBRepository(names: EntityNames, fields: FieldSpec[]): string {
   const { entity, entityCamel } = names;
   const mapFields = fields.map((f) => `      ${f.name}: data.${f.name},`).join('\n');
-  const ownerIdMap = owned ? `      ownerId: data.ownerId,\n` : '';
-  const findOwnedBlock = owned ? `
-  async findAllByOwner(ownerId: string): Promise<${entity}[]> {
-    try {
-      const entities = await ${entity}Model.find({ ownerId }).sort('-updatedAt').exec();
-      return entities.map((e) => this.mapToEntity(e.toJSON()));
-    } catch (error) {
-      throw new DatabaseError('Failed to find ${entityCamel}s by owner');
-    }
-  }
-` : '';
 
   return `import { ${entity}Model } from './Mongoose${entity}Model';
 import { ${entity} } from '../../Domain/${entity}';
@@ -59,7 +48,28 @@ export class MongoDB${entity}Repository implements ${entity}Repository {
       throw new DatabaseError('Failed to find ${entityCamel} by criteria');
     }
   }
-${findOwnedBlock}
+
+  async find(
+    criteria: Record<string, unknown>,
+    page: number,
+    itemsPerPage: number,
+  ): Promise<{ items: ${entity}[]; total: number }> {
+    try {
+      const total = await ${entity}Model.countDocuments(criteria).exec();
+      const entities = await ${entity}Model.find(criteria)
+        .sort('-updatedAt')
+        .skip((page - 1) * itemsPerPage)
+        .limit(itemsPerPage)
+        .exec();
+      return {
+        items: entities.map((e) => this.mapToEntity(e.toJSON())),
+        total,
+      };
+    } catch (error) {
+      throw new DatabaseError('Failed to find ${entityCamel}s');
+    }
+  }
+
   async findAll(): Promise<${entity}[]> {
     try {
       const entities = await ${entity}Model.find().sort('-updatedAt').exec();
@@ -81,7 +91,7 @@ ${findOwnedBlock}
     return ${entity}.fromPrimitives({
       id: data._id,
 ${mapFields}
-${ownerIdMap}      createdAt: data.createdAt,
+      createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
   }
@@ -89,27 +99,11 @@ ${ownerIdMap}      createdAt: data.createdAt,
 `;
 }
 
-export function renderMySQLRepository(names: EntityNames, fields: FieldSpec[], owned: boolean): string {
+export function renderMySQLRepository(names: EntityNames, fields: FieldSpec[]): string {
   const { entity, entityCamel } = names;
   const saveFields = fields.map((f) => `        ${f.name}: p.${f.name},`).join('\n');
   const updateFields = fields.map((f) => `          ${f.name}: p.${f.name},`).join('\n');
   const mapFields = fields.map((f) => `      ${f.name}: data.${f.name},`).join('\n');
-  const ownerIdSave = owned ? `        ownerId: p.ownerId,\n` : '';
-  const ownerIdUpdate = owned ? `          ownerId: p.ownerId,\n` : '';
-  const ownerIdMap = owned ? `      ownerId: data.ownerId,\n` : '';
-  const findOwnedBlock = owned ? `
-  async findAllByOwner(ownerId: string): Promise<${entity}Entity[]> {
-    try {
-      const entities = await ${entity}Model.findAll({
-        where: { ownerId },
-        order: [['updatedAt', 'DESC']],
-      });
-      return entities.map((e) => this.mapToEntity(e.toJSON()));
-    } catch (error) {
-      throw new DatabaseError('Failed to find ${entityCamel}s by owner');
-    }
-  }
-` : '';
 
   return `import { ${entity} as ${entity}Model } from '@/Contexts/Shared/Infrastructure/Persistence/sequelize';
 import { ${entity} as ${entity}Entity } from '../../Domain/${entity}';
@@ -123,7 +117,7 @@ export class MySQL${entity}Repository implements ${entity}Repository {
       await ${entity}Model.create({
         id: p.id,
 ${saveFields}
-${ownerIdSave}        createdAt: p.createdAt,
+        createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       });
     } catch (error) {
@@ -138,7 +132,7 @@ ${ownerIdSave}        createdAt: p.createdAt,
         {
           id: p.id,
 ${updateFields}
-${ownerIdUpdate}          createdAt: p.createdAt,
+          createdAt: p.createdAt,
           updatedAt: p.updatedAt,
         },
         { where: { id } },
@@ -165,7 +159,28 @@ ${ownerIdUpdate}          createdAt: p.createdAt,
       throw new DatabaseError('Failed to find ${entityCamel} by criteria');
     }
   }
-${findOwnedBlock}
+
+  async find(
+    criteria: Record<string, unknown>,
+    page: number,
+    itemsPerPage: number,
+  ): Promise<{ items: ${entity}Entity[]; total: number }> {
+    try {
+      const { count, rows } = await ${entity}Model.findAndCountAll({
+        where: criteria,
+        order: [['updatedAt', 'DESC']],
+        limit: itemsPerPage,
+        offset: (page - 1) * itemsPerPage,
+      });
+      return {
+        items: rows.map((e) => this.mapToEntity(e.toJSON())),
+        total: count,
+      };
+    } catch (error) {
+      throw new DatabaseError('Failed to find ${entityCamel}s');
+    }
+  }
+
   async findAll(): Promise<${entity}Entity[]> {
     try {
       const entities = await ${entity}Model.findAll({ order: [['updatedAt', 'DESC']] });
@@ -187,7 +202,7 @@ ${findOwnedBlock}
     return ${entity}Entity.fromPrimitives({
       id: data.id,
 ${mapFields}
-${ownerIdMap}      createdAt: data.createdAt,
+      createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
   }
@@ -195,22 +210,8 @@ ${ownerIdMap}      createdAt: data.createdAt,
 `;
 }
 
-export function renderInMemoryRepository(names: EntityNames, _fields: FieldSpec[], owned: boolean): string {
+export function renderInMemoryRepository(names: EntityNames, _fields: FieldSpec[]): string {
   const { entity, entityCamel } = names;
-  const ownerAccessor = owned
-    ? `const candidate = key === 'ownerId' ? ${entityCamel}.ownerId.value : (${entityCamel} as any)[key];`
-    : `const candidate = (${entityCamel} as any)[key];`;
-  const findOwnedBlock = owned ? `
-  async findAllByOwner(ownerId: string): Promise<${entity}[]> {
-    const result: ${entity}[] = [];
-    for (const ${entityCamel} of this.entities.values()) {
-      if (${entityCamel}.ownerId.value === ownerId) {
-        result.push(${entityCamel});
-      }
-    }
-    return result;
-  }
-` : '';
 
   return `import { ${entity} } from '../../Domain/${entity}';
 import { ${entity}Repository } from '../../Domain/${entity}Repository';
@@ -234,7 +235,7 @@ export class InMemory${entity}Repository implements ${entity}Repository {
     for (const ${entityCamel} of this.entities.values()) {
       let matches = true;
       for (const [key, value] of Object.entries(criteria)) {
-        ${ownerAccessor}
+        const candidate = (${entityCamel} as any)[key];
         if (candidate !== value) {
           matches = false;
           break;
@@ -244,7 +245,27 @@ export class InMemory${entity}Repository implements ${entity}Repository {
     }
     return null;
   }
-${findOwnedBlock}
+
+  async find(
+    criteria: Record<string, unknown>,
+    page: number,
+    itemsPerPage: number,
+  ): Promise<{ items: ${entity}[]; total: number }> {
+    let filtered = [...this.entities.values()];
+
+    for (const [key, value] of Object.entries(criteria)) {
+      filtered = filtered.filter((${entityCamel}) => {
+        const candidate = (${entityCamel} as any)[key];
+        return candidate === value;
+      });
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * itemsPerPage;
+    const items = filtered.slice(start, start + itemsPerPage);
+    return { items, total };
+  }
+
   async findAll(): Promise<${entity}[]> {
     return [...this.entities.values()];
   }
@@ -266,20 +287,19 @@ ${findOwnedBlock}
 `;
 }
 
-export function renderMongooseModel(names: EntityNames, fields: FieldSpec[], owned: boolean): string {
+export function renderMongooseModel(names: EntityNames, fields: FieldSpec[]): string {
   const { entity, entityCamel, entityPluralLower } = names;
   const fieldsBlock = fields
     .map((f) => `    ${f.name}: { type: ${mongooseType(f.type)}, required: true },`)
     .join('\n');
-  const ownerIdField = owned ? `    ownerId: { type: String, required: true },\n` : '';
 
-  return `import mongoose, { Schema, model } from 'mongoose';
+  return `import { Schema, model } from 'mongoose';
 
 const ${entityCamel}Schema = new Schema(
   {
     _id: { type: String, required: true },
 ${fieldsBlock}
-${ownerIdField}    createdAt: { type: Date, required: true },
+    createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true },
   },
   { timestamps: false, versionKey: false, _id: false },
