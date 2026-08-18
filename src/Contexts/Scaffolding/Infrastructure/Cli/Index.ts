@@ -14,6 +14,7 @@ import { resolveLayout, loadConfig, resolveProjectRoot } from '@/Contexts/Scaffo
 import type { DddCqrsConfig, ProjectLayout } from '@/Contexts/Scaffolding/Infrastructure/ProjectLayout';
 import { FileWriter } from '@/Contexts/Scaffolding/Infrastructure/FileWriter';
 import { ContainerUpdater } from '@/Contexts/Scaffolding/Infrastructure/ContainerUpdater';
+import { registerHelpCommand } from '@/Contexts/Scaffolding/Infrastructure/Cli/HelpCommand';
 
 interface CommonOptions {
   fields?: string;
@@ -22,14 +23,9 @@ interface CommonOptions {
   container?: string;
   dryRun: boolean;
   force: boolean;
-  owned?: boolean;
 }
 
-interface AdminOptions {
-  admin: boolean;
-}
-
-interface ModuleCmdOptions extends CommonOptions, AdminOptions {
+interface ModuleCmdOptions extends CommonOptions {
   name: string;
 }
 
@@ -38,7 +34,7 @@ interface PieceCmdOptions extends CommonOptions {
   name?: string;
 }
 
-interface ControllerCmdOptions extends CommonOptions, AdminOptions {
+interface ControllerCmdOptions extends CommonOptions {
   module: string;
 }
 
@@ -67,14 +63,6 @@ function addFieldsOption(cmd: Command): void {
   );
 }
 
-function addOwnedOption(cmd: Command): void {
-  cmd.option('--owned', 'Generate the owned pattern (ownerId field, findAllByOwner, GetOwned<Plural> query and its route)');
-}
-
-function addAdminOptions(cmd: Command): void {
-  cmd.option('--no-admin', 'Skip AdminUpdate/AdminDelete commands');
-}
-
 function addExamples(cmd: Command, examples: string[]): void {
   cmd.addHelpText('afterAll', `\nExamples:\n${examples.map((e) => `  $ ddd-cqrs ${e}`).join('\n')}\n`);
 }
@@ -99,10 +87,8 @@ export function run(): void {
     .description('Generate a full DDD-CQRS module (Domain, Commands, Queries, Schemas, Persistence, Controller, Router) and wire the Container')
     .requiredOption('--name <entity>', 'Entity name in PascalCase (e.g. BlogPost)'));
   addFieldsOption(moduleCmd);
-  addOwnedOption(moduleCmd);
-  addAdminOptions(moduleCmd);
   addCommonOptions(moduleCmd);
-  addExamples(moduleCmd, ['gen module --name BlogPost --fields "title:string,views:number"', 'gen module --name BlogPost --owned --no-admin --dry-run']);
+  addExamples(moduleCmd, ['gen module --name BlogPost --fields "title:string,views:number"', 'gen module --name BlogPost --dry-run']);
   moduleCmd.action(handleModule);
 
   const commandCmd = addHelpHint(gen
@@ -130,10 +116,8 @@ export function run(): void {
     .description('Generate Controller and Router for an existing module')
     .requiredOption('--module <entity>', 'Entity/module name in PascalCase'));
   addFieldsOption(controllerCmd);
-  addOwnedOption(controllerCmd);
-  addAdminOptions(controllerCmd);
   addCommonOptions(controllerCmd);
-  addExamples(controllerCmd, ['gen controller --module BlogPost --owned']);
+  addExamples(controllerCmd, ['gen controller --module BlogPost']);
   controllerCmd.action(handleController);
 
   const schemaCmd = addHelpHint(gen
@@ -149,17 +133,18 @@ export function run(): void {
     gen.help();
   });
 
+  registerHelpCommand(program);
+
   program.parse(process.argv);
 }
 
-function loadAndResolve<T extends CommonOptions>(opts: T): T & { context: string; contextsRoot: string; container?: string; owned: boolean } {
+function loadAndResolve<T extends CommonOptions>(opts: T): T & { context: string; contextsRoot: string; container?: string } {
   const config: DddCqrsConfig = loadConfig(resolveProjectRoot(process.cwd()));
   return {
     ...opts,
     context: opts.context ?? config.defaultContext ?? NEUTRAL_DEFAULT_CONTEXT,
     contextsRoot: opts.contextsRoot ?? config.contextRoot ?? DEFAULT_CONTEXTS_ROOT,
     container: opts.container ?? config.containerPath,
-    owned: opts.owned === true || config.ownership === true,
   };
 }
 
@@ -172,7 +157,7 @@ function resolveExecution<T extends CommonOptions>(opts: T): { resolved: ReturnT
 async function handleModule(opts: ModuleCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
-    const spec = ModuleSpec.create(opts.name, opts.fields, resolved.context, { admin: opts.admin, owned: resolved.owned });
+    const spec = ModuleSpec.create(opts.name, opts.fields, resolved.context);
     const plan = new BuildModulePlan().build(spec, layout.contextsRoot);
     await execute(plan, resolved, layout.containerPath);
   });
@@ -200,7 +185,7 @@ async function handleController(opts: ControllerCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('controller', opts.module, '', opts.fields, resolved.context);
-    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot, { admin: opts.admin, owned: resolved.owned });
+    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot);
     await execute(plan, resolved, layout.containerPath);
   });
 }
