@@ -18,7 +18,6 @@ export interface DddCqrsConfig {
   contextRoot?: string;
   defaultContext?: string;
   containerPath?: string;
-  ownership?: boolean;
 }
 
 const CONFIG_FILENAME = 'ddd-cqrs.config.json';
@@ -65,7 +64,6 @@ function parseConfig(configPath: string, filename: string): DddCqrsConfig {
       contextRoot: pick('contextRoot'),
       defaultContext: pick('defaultContext'),
       containerPath: pick('containerPath'),
-      ownership: raw.ownership === true ? true : undefined,
     };
   } catch {
     console.warn(`[ddd-cqrs] Warning: "${filename}" is not valid JSON — using defaults.`);

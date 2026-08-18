@@ -11,16 +11,10 @@ import {
   renderUpdateCommandHandler,
   renderDeleteCommand,
   renderDeleteCommandHandler,
-  renderAdminUpdateCommand,
-  renderAdminUpdateCommandHandler,
-  renderAdminDeleteCommand,
-  renderAdminDeleteCommandHandler,
 } from '@/Contexts/Scaffolding/Infrastructure/Templates/CommandTemplates';
 import {
   renderGetByIdQuery,
   renderGetByIdQueryHandler,
-  renderGetOwnedPluralQuery,
-  renderGetOwnedPluralQueryHandler,
 } from '@/Contexts/Scaffolding/Infrastructure/Templates/QueryTemplates';
 import { renderSchemaTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/SchemaTemplate';
 import {
@@ -35,7 +29,6 @@ import { renderRouterTemplate } from '@/Contexts/Scaffolding/Infrastructure/Temp
 export class BuildModulePlan {
   build(spec: ModuleSpec, contextsRoot: string): GenerationPlan {
     const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
-    const owned = spec.options.owned;
     const base = `${contextsRoot}/${names.context}/${names.entity}`;
     const files: PlanFile[] = [];
     const registrations: HandlerRegistration[] = [];
@@ -70,54 +63,34 @@ export class BuildModulePlan {
       });
     };
 
-    addFile(`${base}/Domain/${names.entity}.ts`, renderEntityTemplate(names, spec.fields, owned));
-    addFile(`${base}/Domain/${names.entity}Repository.ts`, renderRepositoryTemplate(names, spec.fields, owned));
+    addFile(`${base}/Domain/${names.entity}.ts`, renderEntityTemplate(names, spec.fields));
+    addFile(`${base}/Domain/${names.entity}Repository.ts`, renderRepositoryTemplate(names));
 
-    addFile(`${base}/Application/Commands/Create${names.entity}/Create${names.entity}Command.ts`, renderCreateCommand(names, spec.fields, owned));
-    addFile(`${base}/Application/Commands/Create${names.entity}/Create${names.entity}CommandHandler.ts`, renderCreateCommandHandler(names, spec.fields, owned));
+    addFile(`${base}/Application/Commands/Create${names.entity}/Create${names.entity}Command.ts`, renderCreateCommand(names, spec.fields));
+    addFile(`${base}/Application/Commands/Create${names.entity}/Create${names.entity}CommandHandler.ts`, renderCreateCommandHandler(names, spec.fields));
     addCommand('Create', `new Create${names.entity}CommandHandler(${names.entityCamel}Repo, this.idGenerator)`);
 
-    addFile(`${base}/Application/Commands/Update${names.entity}/Update${names.entity}Command.ts`, renderUpdateCommand(names, spec.fields, owned));
-    addFile(`${base}/Application/Commands/Update${names.entity}/Update${names.entity}CommandHandler.ts`, renderUpdateCommandHandler(names, spec.fields, owned));
+    addFile(`${base}/Application/Commands/Update${names.entity}/Update${names.entity}Command.ts`, renderUpdateCommand(names, spec.fields));
+    addFile(`${base}/Application/Commands/Update${names.entity}/Update${names.entity}CommandHandler.ts`, renderUpdateCommandHandler(names, spec.fields));
     addCommand('Update', `new Update${names.entity}CommandHandler(${names.entityCamel}Repo)`);
 
-    addFile(`${base}/Application/Commands/Delete${names.entity}/Delete${names.entity}Command.ts`, renderDeleteCommand(names, owned));
-    addFile(`${base}/Application/Commands/Delete${names.entity}/Delete${names.entity}CommandHandler.ts`, renderDeleteCommandHandler(names, owned));
+    addFile(`${base}/Application/Commands/Delete${names.entity}/Delete${names.entity}Command.ts`, renderDeleteCommand(names));
+    addFile(`${base}/Application/Commands/Delete${names.entity}/Delete${names.entity}CommandHandler.ts`, renderDeleteCommandHandler(names));
     addCommand('Delete', `new Delete${names.entity}CommandHandler(${names.entityCamel}Repo)`);
-
-    if (spec.options.admin) {
-      addFile(`${base}/Application/Commands/AdminUpdate${names.entity}/AdminUpdate${names.entity}Command.ts`, renderAdminUpdateCommand(names, spec.fields));
-      addFile(`${base}/Application/Commands/AdminUpdate${names.entity}/AdminUpdate${names.entity}CommandHandler.ts`, renderAdminUpdateCommandHandler(names, spec.fields));
-      addCommand('AdminUpdate', `new AdminUpdate${names.entity}CommandHandler(${names.entityCamel}Repo)`);
-
-      addFile(`${base}/Application/Commands/AdminDelete${names.entity}/AdminDelete${names.entity}Command.ts`, renderAdminDeleteCommand(names));
-      addFile(`${base}/Application/Commands/AdminDelete${names.entity}/AdminDelete${names.entity}CommandHandler.ts`, renderAdminDeleteCommandHandler(names));
-      addCommand('AdminDelete', `new AdminDelete${names.entity}CommandHandler(${names.entityCamel}Repo)`);
-    }
 
     addFile(`${base}/Application/Queries/Get${names.entity}ById/Get${names.entity}ByIdQuery.ts`, renderGetByIdQuery(names));
     addFile(`${base}/Application/Queries/Get${names.entity}ById/Get${names.entity}ByIdQueryHandler.ts`, renderGetByIdQueryHandler(names));
     addQuery(`Get${names.entity}ById`, `new Get${names.entity}ByIdQueryHandler(${names.entityCamel}Repo)`);
 
-    if (owned) {
-      addFile(`${base}/Application/Queries/GetOwned${names.entityPlural}/GetOwned${names.entityPlural}Query.ts`, renderGetOwnedPluralQuery(names));
-      addFile(`${base}/Application/Queries/GetOwned${names.entityPlural}/GetOwned${names.entityPlural}QueryHandler.ts`, renderGetOwnedPluralQueryHandler(names));
-      addQuery(`GetOwned${names.entityPlural}`, `new GetOwned${names.entityPlural}QueryHandler(${names.entityCamel}Repo)`);
-    }
-
     addFile(`${base}/Infrastructure/Schemas/${names.entity}Schemas.ts`, renderSchemaTemplate(names, spec.fields));
 
-    addFile(`${base}/Infrastructure/Persistence/MongoDB${names.entity}Repository.ts`, renderMongoDBRepository(names, spec.fields, owned));
-    addFile(`${base}/Infrastructure/Persistence/MySQL${names.entity}Repository.ts`, renderMySQLRepository(names, spec.fields, owned));
-    addFile(`${base}/Infrastructure/Persistence/InMemory${names.entity}Repository.ts`, renderInMemoryRepository(names, spec.fields, owned));
-    addFile(`${base}/Infrastructure/Persistence/Mongoose${names.entity}Model.ts`, renderMongooseModel(names, spec.fields, owned));
+    addFile(`${base}/Infrastructure/Persistence/MongoDB${names.entity}Repository.ts`, renderMongoDBRepository(names, spec.fields));
+    addFile(`${base}/Infrastructure/Persistence/MySQL${names.entity}Repository.ts`, renderMySQLRepository(names, spec.fields));
+    addFile(`${base}/Infrastructure/Persistence/InMemory${names.entity}Repository.ts`, renderInMemoryRepository(names, spec.fields));
+    addFile(`${base}/Infrastructure/Persistence/Mongoose${names.entity}Model.ts`, renderMongooseModel(names, spec.fields));
 
-    const controllerOptions = {
-      admin: spec.options.admin,
-      owned,
-    };
-    addFile(`${base}/Infrastructure/${names.entity}Controller.ts`, renderControllerTemplate(names, spec.fields, controllerOptions));
-    addFile(`${base}/Infrastructure/${names.entity}Router.ts`, renderRouterTemplate(names, controllerOptions));
+    addFile(`${base}/Infrastructure/${names.entity}Controller.ts`, renderControllerTemplate(names, spec.fields));
+    addFile(`${base}/Infrastructure/${names.entity}Router.ts`, renderRouterTemplate(names));
 
     const repositoryWiring: RepositoryWiring = {
       context: names.context,
