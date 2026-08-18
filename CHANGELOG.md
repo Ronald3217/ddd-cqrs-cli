@@ -7,11 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!--
 Roadmap (not yet implemented):
-- [ ] `ddd-cqrs init` — bootstrap the Shared Kernel in a brand-new project (currently the CLI requires a project that already has the kernel).
-- [ ] `gen module --events` — generate CRUD domain events and publish them from command handlers (design decisions still open in docs/events-flag-blueprint.md).
+- [ ] `ddd-cqrs init` — bootstrap the Shared Kernel in a brand-new project.
+- [ ] `--db` flag — select database (mongo/mysql/inmemory).
+- [ ] `--http` flag — select HTTP framework (express/elysia/fastify).
 -->
 
 ## [Unreleased]
+
+## [0.1.1] - 2026-08-14
+
+### Added
+
+- `ddd-cqrs help` — centralized help output showing all available commands, parameters, and examples.
+- `AGENTS.md` — project conventions, architecture, and gotchas for AI assistants.
+- ROADMAP: planned `--db` flag for database selection (mongo/mysql/inmemory).
+- ROADMAP: planned `--http` flag for framework selection (express/elysia/fastify).
+
+### Changed
+
+- Simplified template signatures — removed `owned` parameter from all generators.
+- Updated `.gitignore` to exclude `.codegraph/`, `*.tgz`, and `CODEGRAPH_COMMANDS.txt`.
+- Updated `README.md`.
+
+### Removed
+
+- `--owned` flag from `gen module` — ownership is now a domain concern, not a scaffolding concern.
 
 ## [0.1.0] - 2026-08-14
 
@@ -19,7 +39,7 @@ Roadmap (not yet implemented):
 
 - Portable DDD/CQRS scaffolding CLI (`ddd-cqrs`) with `gen` subcommands: `module`, `command`, `query`, `controller`, and `schema`.
 - `gen module` generates a complete module (21 files by default) following the project's hexagonal layout: entity, repository interface, commands and queries with handlers, controller, router, Zod schemas, and MongoDB/MySQL/InMemory repository implementations.
-- Module options: `--owned` (nested entity), `--no-admin` (skip admin commands/queries), `--fields`, `--context`, `--contexts-root`, `--force`, and `--dry-run`.
+- Module options: `--no-admin` (skip admin commands/queries), `--fields`, `--context`, `--contexts-root`, `--force`, and `--dry-run`.
 - `--container` wiring: updates the target project's dependency container (`ContainerUpdater`) — registers repositories, connects command/query handlers, and rebuilds the in-memory buses.
 - npm package metadata for publishing (`files`, `prepublishOnly`) and MIT license.
 - Detailed README covering usage, options, and architecture.
@@ -29,6 +49,7 @@ Roadmap (not yet implemented):
 - Global Windows binary invoked through the npm shim failed silently (missing shebang); added `#!/usr/bin/env node` to the CLI entry so `ddd-cqrs` runs on Windows.
 
 <!--
-[unreleased]: https://github.com/OWNER/ddd-cqrs-cli/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/OWNER/ddd-cqrs-cli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/OWNER/ddd-cqrs-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/OWNER/ddd-cqrs-cli/releases/tag/v0.1.0
 -->
