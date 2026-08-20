@@ -1,7 +1,7 @@
 import { FieldSpec } from './FieldSpec';
 import { assertPascalCase } from './NamingRules';
 
-export type PieceKind = 'command' | 'query' | 'controller' | 'schema';
+export type PieceKind = 'command' | 'query' | 'controller' | 'schema' | 'value-object' | 'entity' | 'event' | 'repository';
 
 export class PieceSpec {
   private constructor(

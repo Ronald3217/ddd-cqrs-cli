@@ -9,13 +9,16 @@ export interface WriteResult {
 export interface FileWriterOptions {
   force: boolean;
   dryRun: boolean;
+  baseDir?: string;
 }
 
 export class FileWriter {
   constructor(private readonly options: FileWriterOptions) {}
 
   write(relativePath: string, content: string): WriteResult {
-    const abs = path.resolve(relativePath);
+    const abs = this.options.baseDir
+      ? path.resolve(this.options.baseDir, relativePath)
+      : path.resolve(relativePath);
     const existed = existsSync(abs);
 
     if (existed && !this.options.force) {

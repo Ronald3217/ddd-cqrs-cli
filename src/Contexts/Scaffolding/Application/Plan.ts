@@ -4,6 +4,7 @@ export interface PlanFile {
 }
 
 export type BusKind = 'command' | 'query';
+export type HttpFramework = 'express' | 'elysia';
 
 export interface HandlerRegistration {
   bus: BusKind;
