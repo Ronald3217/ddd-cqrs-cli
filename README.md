@@ -1,6 +1,6 @@
 # ddd-cqrs-cli
 
-Portable DDD-CQRS scaffolding generator. One command generates a complete module — Domain, Application (Commands/Queries), and Infrastructure (Controller, Router, Zod schemas, repositories) — inside any Node.js/TypeScript project, without installing a single runtime dependency into it.
+Portable DDD-CQRS scaffolding generator. Bootstrap a complete hexagonal-architecture project with `init`, then generate modules, entities, commands, queries, and more — inside any Node.js/TypeScript project.
 
 ![npm version](https://img.shields.io/npm/v/ddd-cqrs-cli)
 ![License](https://img.shields.io/badge/license-MIT-blue)
@@ -29,23 +29,24 @@ The published binary is `ddd-cqrs` (package: `ddd-cqrs-cli`). TypeScript CommonJ
 
 ## Features
 
-- **DDD + CQRS module scaffolding** — given an entity name, the CLI generates the full module: Domain (AggregateRoot entity + repository interface), Application (Create/Update/Delete commands, admin commands, queries), and Infrastructure (Express controller + router, Zod schemas, MongoDB/MySQL/InMemory repositories, Mongoose model).
-- **Portable** — runs from *any* Node.js project: it walks up from the current directory looking for `package.json`, resolves a config file there, and generates files relative to that project root. It works in ANY project layout, not just a fixed one.
-- **Zero runtime dependencies for the target project** — the CLI only installs `commander` for itself. Generated code imports your project's existing shared kernel (`@/Contexts/Shared`, express, zod, mongoose, sequelize) — the CLI generates files but never runs `npm install` in the target.
-- **Admin handlers with `requesterId` + authorization stub** — `AdminUpdate`/`AdminDelete` commands carry `requesterId`, and their handlers include a `// TODO: authorize command.requesterId as an administrator` stub that you fill in with your project's authorization model.
-- **Ownership opt-in** (`--owned`) — adds an `ownerId` field, `findAllByOwner()` on the repository interface and all implementations, a `GetOwned<Plural>` query + route, and ownership checks that throw `UnauthorizedError` in the `Update`/`Delete` handlers.
-- **Container wiring** — optionally wires the generated handlers into an existing DI `Container` (imports, repository construction, handler instantiation, command/query bus registrations), with line-level idempotency.
-- **Dry-run** (`--dry-run`) — prints the full generation plan and every container edit without touching the disk.
-- **Idempotent writes** — existing files are left untouched (marked `=` in the output); `--force` overwrites them.
-- **Strict validation** — PascalCase entity/context/action names, singular entity enforcement with singular suggestions, reserved and duplicate field rejection, and a typed field syntax.
+- **Project bootstrap** — `init` generates a complete Shared Kernel (~43 files) with Domain buses, Command/Query/Event contracts, InMemory implementations, error classes, value objects, and services.
+- **DDD + CQRS module scaffolding** — `gen module` generates a full module: Domain (AggregateRoot entity + repository interface), Application (Commands/Queries with handlers), and Infrastructure (Controller, Router, Zod schemas, MongoDB/MySQL/InMemory repositories).
+- **Atomic generators** — generate individual pieces: `entity`, `value-object`, `error`, `event`, `subscriber`, `service`, `repository`, `command`, `query`, `controller`, `router`, `schema`.
+- **HTTP framework support** — `--http express` (default) or `--http elysia` for controllers and routers.
+- **Database selection** — `--db mongo,mysql,inmemory` for repository implementations.
+- **Vercel compatible** — generated `Start.ts` supports both local and serverless deployment.
+- **Portable** — runs from *any* Node.js project. Works in ANY project layout.
+- **Container wiring** — optionally wires generated handlers into an existing DI `Container`.
+- **Dry-run** (`--dry-run`) — preview generation without writing files.
+- **Idempotent writes** — existing files untouched; `--force` overwrites.
 
 ## Requirements
 
 - **Node.js 22+** for the CLI itself.
 - The **target project** must:
-  - Have a `package.json`. The CLI walks up from the current directory until it finds one; if none is found it fails with a clear error (see [Troubleshooting](#troubleshooting)).
-  - Follow (or be willing to adopt) the `src/Contexts/<Context>/<Entity>` layout. Paths can be customized with `--contexts-root` or `contextRoot`.
-  - Provide the DDD shared kernel and libraries the generated code imports: `@/Contexts/Shared` (AggregateRoot, DocumentId, DateTime, IdGenerator, Command/Query and their buses, errors like `NotFoundError`/`UnauthorizedError`/`DatabaseError`, the `auth` middleware, and the `CustomRequest` type), plus `express`, `zod`, `mongoose`, and `sequelize`. The CLI generates code that references these — it does **not** install or create them.
+  - Have a `package.json`. The CLI walks up from the current directory until it finds one.
+  - For `gen module` and atomic generators: the Shared Kernel must exist (`src/Contexts/Shared/`). Use `init` to bootstrap it in new projects.
+  - For `init`: no prior setup required — it generates everything from scratch.
 
 ## Installation
 
@@ -111,16 +112,32 @@ npx tsx src/Contexts/Scaffolding/Infrastructure/Cli/Index.ts gen module --name B
 
 ## Quick start
 
-Create a brand-new project and scaffold a `Product` module into it.
+### New project (from scratch)
 
 ```bash
-mkdir shop && cd shop
+mkdir my-project && cd my-project
 npm init -y
 npm i -D ddd-cqrs-cli
+
+# Bootstrap Shared Kernel
+npx tsx ../ddd-cqrs-cli/src/Contexts/Scaffolding/Infrastructure/Cli/Index.ts init --name my-project
+
+# Install dependencies
+npm install
+
+# Generate a module
+npx tsx ../ddd-cqrs-cli/src/Contexts/Scaffolding/Infrastructure/Cli/Index.ts gen module --name Product --fields "title:string,views:number"
+```
+
+### Existing project
+
+If the Shared Kernel already exists:
+
+```bash
 ddd-cqrs gen module --name Product --fields "title:string,views:number" --context Shop
 ```
 
-The CLI walks up from `shop/`, finds `package.json`, and generates:
+The CLI generates:
 
 ```
 src/Contexts/Shop/Product/
@@ -148,13 +165,12 @@ src/Contexts/Shop/Product/
         └── MongooseProductModel.ts
 ```
 
-**21 files** with the default options. See [What gets generated](#what-gets-generated) for the exact count per option combination.
+**21 files** with the default options.
 
 Before the module works end-to-end, you must still:
 
-1. **Register the Sequelize model** (MySQL path): the generated `MySQLProductRepository` imports the model from your centralized `@/Contexts/Shared/Infrastructure/Persistence/sequelize`, so add a `Product` model there if you use MySQL.
-2. **Wire the routes**: mount `ProductRouter(controller)` in your Express app.
-3. **Provide the shared kernel**: `@/Contexts/Shared` (buses, `AggregateRoot`, errors, `auth` middleware, `CustomRequest`) must exist with the API the generated code expects.
+1. **Wire the routes**: mount `ProductRouter(controller)` in your Express app.
+2. **Register handlers** in the Container (or use `--container` flag).
 
 Preview everything without writing anything:
 
@@ -169,32 +185,66 @@ Run `ddd-cqrs --help`:
 ```
 Usage: ddd-cqrs [options] [command]
 
-Portable DDD-CQRS scaffolding generator
+Portable DDD-CQRS scaffolding generator v0.2.0
 
 Options:
   -V, --version   output the version number
   -h, --help      display help for command
 
 Commands:
+  init            Bootstrap a new project with Shared Kernel (~43 files)
   gen             Generate DDD-CQRS artifacts
   help [command]  display help for command
 ```
 
-Every command shares a set of common options (`--context`, `--contexts-root`, `--container`, `--dry-run`, `--force`) plus command-specific ones. `ddd-cqrs gen` alone prints the `gen` help.
+Every command shares a set of common options (`--context`, `--contexts-root`, `--dry-run`, `--force`) plus command-specific ones.
+
+### `ddd-cqrs init`
+
+Bootstrap a new project with Shared Kernel (~43 files).
+
+```
+Usage: ddd-cqrs init [options]
+
+Options:
+  --name <project>       Project name in kebab-case (e.g. my-backend)    (required)
+  --target <dir>         Target directory (default: current directory)
+  --context <context>    Bounded context name (default: MyContext)
+  --contexts-root <dir>  Contexts root directory (default: src/Contexts)
+  --no-services          Skip optional services (Password, Token, Email)
+  --dry-run              Show the generation plan without writing files
+  --force                Overwrite existing files
+```
+
+Examples:
+```bash
+ddd-cqrs init --name my-backend
+ddd-cqrs init --name my-backend --target /path/to/project
+ddd-cqrs init --name my-backend --context ECommerce
+ddd-cqrs init --name my-backend --dry-run
+```
+
+Generates:
+- **Domain layer**: Bus interfaces (CommandBus, QueryBus, EventBus), Command/Query/Event contracts, AggregateRoot, DomainError, IdGenerator, Response, SlugGenerator, Error classes, Value Objects
+- **Infrastructure layer**: InMemory bus implementations, UuidGenerator, SlugGenerator, config (env, cors), types (CustomRequest)
+- **Services** (optional): PasswordService, TokenService, EmailService with implementations
+- **Project root**: tsconfig.json, package.json, Container.ts, Server.ts, Start.ts (Vercel compatible)
+
+> **Note**: Generates Express-specific files by default (types, cors, server.ts). If using Elysia/Fastify, delete those files and create your HTTP layer.
 
 ### Common options
 
 | Option | Description | Default |
 | --- | --- | --- |
 | `--context <context>` | Bounded context name (PascalCase). | `MyContext`, or `defaultContext` from `ddd-cqrs.config.json` |
-| `--contexts-root <dir>` | Directory that contains the contexts. Resolved against the project root. | `src/Contexts`, or `contextRoot` from `ddd-cqrs.config.json` |
-| `--container <file>` | Container file to wire. Path is resolved against the project root. | none, or `containerPath` from `ddd-cqrs.config.json` |
-| `--dry-run` | Show the generation plan and container edits without writing files. | `false` |
+| `--contexts-root <dir>` | Directory that contains the contexts. | `src/Contexts`, or `contextRoot` from `ddd-cqrs.config.json` |
+| `--container <file>` | Container file to wire. | none, or `containerPath` from `ddd-cqrs.config.json` |
+| `--dry-run` | Show the generation plan without writing files. | `false` |
 | `--force` | Overwrite existing files. | `false` |
 
 ### `ddd-cqrs gen module`
 
-Generate a full module: Domain, Commands, Queries, Schemas, Persistence, Controller, Router — and wire the container.
+Generate a full module: Domain, Commands, Queries, Schemas, Persistence, Controller, Router.
 
 ```
 Usage: ddd-cqrs gen module [options]
@@ -202,19 +252,17 @@ Usage: ddd-cqrs gen module [options]
 Options:
   --name <entity>        Entity name in PascalCase (e.g. BlogPost)       (required)
   --fields <fields>      Comma-separated fields as name:type             (default: "")
-  --owned                Generate the owned pattern (ownerId field,
-                         findAllByOwner, GetOwned<Plural> query and its route)
-  --no-admin             Skip AdminUpdate/AdminDelete commands
   --context <context>
   --contexts-root <dir>
   --container <file>
   --dry-run
   --force
-  -h, --help
+```
 
 Examples:
-  $ ddd-cqrs gen module --name BlogPost --fields "title:string,views:number"
-  $ ddd-cqrs gen module --name BlogPost --owned --no-admin --dry-run
+```bash
+ddd-cqrs gen module --name BlogPost --fields "title:string,views:number"
+ddd-cqrs gen module --name BlogPost --dry-run
 ```
 
 ### `ddd-cqrs gen command`
@@ -267,58 +315,91 @@ Generates `Application/Queries/<Action><Entity>Query/<Action><Entity>Query.ts` (
 
 ### `ddd-cqrs gen controller`
 
-Generate only the Controller and Router for an existing module (e.g. to regenerate after changing options).
+Generate Controller for an existing module.
 
 ```
 Usage: ddd-cqrs gen controller [options]
 
 Options:
   --module <entity>      Entity/module name in PascalCase               (required)
+  --http <framework>     HTTP framework: express (default), elysia
   --fields <fields>      Field list used to build command arguments    (default: "")
-  --owned
-  --no-admin
   --context <context>
-  --contexts-root <dir>
-  --container <file>
   --dry-run
   --force
-  -h, --help
+```
 
 Example:
-  $ ddd-cqrs gen controller --module BlogPost --owned
+```bash
+ddd-cqrs gen controller --module BlogPost
+ddd-cqrs gen controller --module BlogPost --http elysia
 ```
 
-Generates `Infrastructure/<Entity>Controller.ts` and `Infrastructure/<Entity>Router.ts` (2 files). No container wiring is produced for this command.
+### `ddd-cqrs gen router`
 
-### `ddd-cqrs gen schema`
-
-Generate only the Zod `Create`/`Update` schemas for an existing module.
+Generate Router for an existing module.
 
 ```
-Usage: ddd-cqrs gen schema [options]
+Usage: ddd-cqrs gen router [options]
 
 Options:
   --module <entity>      Entity/module name in PascalCase               (required)
-  --fields <fields>      Field list the schemas validate                (default: "")
+  --http <framework>     HTTP framework: express (default), elysia
   --context <context>
-  --contexts-root <dir>
-  --container <file>
   --dry-run
   --force
-  -h, --help
-
-Example:
-  $ ddd-cqrs gen schema --module BlogPost --fields "title:string,views:number"
 ```
 
-Generates `Infrastructure/Schemas/<Entity>Schemas.ts` (1 file).
+Example:
+```bash
+ddd-cqrs gen router --module BlogPost
+ddd-cqrs gen router --module BlogPost --http elysia
+```
+
+### Atomic generators
+
+Generate individual DDD pieces:
+
+```bash
+# Entity
+ddd-cqrs gen entity --module BlogPost --name BlogPost --fields "title:string,views:number"
+
+# Value Object
+ddd-cqrs gen value-object --module User --name Email --type string
+ddd-cqrs gen value-object --module User --name Address --type object --fields "street:string,city:string"
+
+# Error
+ddd-cqrs gen error --module User --name InvalidCredentialsError --message "Invalid credentials" --status 401
+
+# Domain Event
+ddd-cqrs gen event --module Link --name LinkCreatedDomainEvent --fields "title:string,destination:string"
+
+# Event Subscriber
+ddd-cqrs gen subscriber --module User --name SendWelcomeEmail --event UserRegisteredDomainEvent
+
+# Service (interface + implementation)
+ddd-cqrs gen service --module User --name PasswordService --methods "hash,compare"
+ddd-cqrs gen service --module User --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService
+
+# Repository (interface + persistence implementations)
+ddd-cqrs gen repository --module BlogPost --name BlogPost --db "mongo,mysql"
+
+# Command + Handler
+ddd-cqrs gen command --module BlogPost --name Archive --fields "reason:string"
+
+# Query + Handler
+ddd-cqrs gen query --module BlogPost --name SearchByTitle --fields "title:string"
+
+# Schema (Zod)
+ddd-cqrs gen schema --module BlogPost --fields "title:string,views:number"
+```
 
 ### Global options
 
 | Option | Description |
 | --- | --- |
-| `-h, --help` | Display help for the current command (also shown automatically after a usage error, with the hint `(add --help for usage)`). |
-| `-V, --version` | Print the CLI version (`0.1.0`). |
+| `-h, --help` | Display help for the current command. |
+| `-V, --version` | Print the CLI version (`0.2.0`). |
 
 ## Fields syntax
 
@@ -428,47 +509,64 @@ Notes:
         └── Mongoose<Entity>Model.ts
 ```
 
-### File count by option combination
+### File count by command
 
-| Options | Files | Notes |
+| Command | Files | Notes |
 | --- | --- | --- |
-| (default) | 21 | admin on, not owned |
-| `--no-admin` | 17 | no `AdminUpdate`/`AdminDelete` commands |
-| `--owned` | 23 | + `GetOwned<Plural>` query + handler |
-| `--owned --no-admin` | 19 | both variations combined |
+| `init` | 43 | Shared Kernel + project root |
+| `gen module` | 21 | Full module |
+| `gen entity` | 1 | Entity class |
+| `gen value-object` | 1 | Value Object class |
+| `gen error` | 1 | Domain Error class |
+| `gen event` | 1 | Domain Event class |
+| `gen subscriber` | 1 | Event Subscriber class |
+| `gen service` | 2 | Interface + Implementation |
+| `gen repository` | 4 | Interface + 3 persistence implementations |
+| `gen command` | 2 | Command + CommandHandler |
+| `gen query` | 2 | Query + QueryHandler |
+| `gen controller` | 1 | Controller |
+| `gen router` | 1 | Router |
+| `gen schema` | 1 | Zod schemas |
 
-### What `--owned` adds on top of the base module
+### Generated routes (`<Entity>Router.ts`)
 
-- `ownerId: string` in the entity, its primitives, `Create` command and every repository mapping.
-- `findAllByOwner(ownerId)` on the repository interface and in the MongoDB, MySQL and InMemory implementations.
-- `GetOwned<Plural>` query + handler with `page`/`itemsPerPage` (defaults 1 and 10) and a `total` in the response.
-- Ownership guard in `Update`/`Delete` handlers (`UnauthorizedError` if `entity.ownerId.value !== command.ownerId`).
-- A `GET /` route returning the owner's entities (`req.id` is used as `ownerId`).
+| Method | Path | Controller method |
+| --- | --- | --- |
+| GET | `/:id` | `getById` |
+| POST | `/` | `create` |
+| PATCH | `/:id` | `update` |
+| DELETE | `/:id` | `delete` |
 
-### Generated routes (`<Entity>Router.ts`, owned + admin example)
+The controller dispatches `Command`/`Query` objects through the `CommandBus`/`QueryBus`. `create`/`update` parse the request body with the generated Zod schemas.
 
-| Method | Path | Auth middleware | Controller method |
-| --- | --- | --- | --- |
-| GET | `/` | yes | `getOwned<Plural>` (owned only) |
-| GET | `/:id` | **no** | `getById` |
-| POST | `/` | yes | `create` |
-| PATCH | `/:id` | yes | `update` |
-| DELETE | `/:id` | yes | `delete` |
-| PATCH | `/admin/:id` | yes | `adminUpdate` (admin only) |
-| DELETE | `/admin/:id` | yes | `adminDelete` (admin only) |
 
-The controller dispatches `Command`/`Query` objects through the `CommandBus`/`QueryBus`. `create`/`update` parse the request body with the generated Zod schemas; `adminUpdate`/`adminDelete` pass `req.id` as `requesterId`; owned routes pass `req.id` as `ownerId`. Responses are `{ statusCode, message }` for mutations, raw data for `getById`, and `{ statusCode, data, total }` for the owned list.
 
-### Piece commands
+### What `init` generates
 
-| Command | Files generated |
-| --- | --- |
-| `gen command` | 2 — `<Action><Entity>Command.ts` + `...CommandHandler.ts` |
-| `gen query` | 2 — `<Action><Entity>Query.ts` (+ `<Action><Entity>QueryResponse`) + `...QueryHandler.ts` |
-| `gen controller` | 2 — `<Entity>Controller.ts` + `<Entity>Router.ts` |
-| `gen schema` | 1 — `<Entity>Schemas.ts` |
-
-There is no `Unlock` command or `ClaimTokenStore` generated — only the commands and queries listed above.
+```
+src/Contexts/Shared/
+├── Domain/
+│   ├── AggregateRoot.ts, DomainError.ts, IdGenerator.ts, Response.ts, SlugGenerator.ts
+│   ├── Bus/          CommandBus, QueryBus, EventBus
+│   ├── Commands/     Command, CommandHandler
+│   ├── Queries/      Query, QueryHandler
+│   ├── Events/       DomainEvent, DomainEventSubscriber
+│   ├── Errors/       ApiError, BadRequest, Conflict, Database, NotFound, Unauthorized
+│   ├── ValueObjects/ DateTime, DocumentId
+│   └── Services/     PasswordService, TokenService, EmailService (optional)
+├── Infrastructure/
+│   ├── Bus/          InMemoryCommandBus, InMemoryQueryBus, InMemoryEventBus, EventEmitterEventBus
+│   ├── UuidGenerator.ts, SlugGenerator.ts
+│   ├── config/       env.ts, cors.ts
+│   ├── types/        index.ts (CustomRequest)
+│   └── Services/     Bcrypt, Jwt, NodeMailer (optional)
+src/Apps/Backend/
+├── DependencyInjection/Container.ts
+├── Server.ts (Express class)
+└── Start.ts (Vercel compatible)
+tspackage.json
+tsconfig.json
+```
 
 ## Container wiring
 
@@ -507,14 +605,12 @@ npx tsx --tsconfig F:/path/to/ddd-cqrs-cli/tsconfig.json F:/path/to/ddd-cqrs-cli
 
 ## Publishing
 
-Published as **`ddd-cqrs-cli@0.1.0`** (npm) with GitHub Release **`v0.1.0`**
-(<https://github.com/Ronald3217/ddd-cqrs-cli/releases/tag/v0.1.0>).
+Published as **`ddd-cqrs-cli@0.2.0`** (npm) with GitHub Release **`v0.2.0`**
+(<https://github.com/Ronald3217/ddd-cqrs-cli/releases/tag/v0.2.0>).
 
-> **Compatibility:** this release targets projects that already have the DDD/CQRS
-> Shared Kernel (`src/Contexts/Shared/**`), the `@/*` tsconfig paths, and a dependency
-> container with the wiring markers. Greenfield projects are NOT supported yet —
-> `ddd-cqrs init` (kernel + tsconfig + container bootstrap) and
-> `gen module --events` are planned for `0.2.x`.
+> **What's new in v0.2.0:** `init` command for greenfield projects, atomic generators
+> (entity, value-object, error, event, subscriber, service, repository), HTTP framework
+> support (Express/Elysia), database selection, and Vercel compatibility.
 
 The package ships `dist/` only and rebuilds on every publish:
 

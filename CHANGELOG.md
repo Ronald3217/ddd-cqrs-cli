@@ -5,14 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!--
-Roadmap (not yet implemented):
-- [ ] `ddd-cqrs init` — bootstrap the Shared Kernel in a brand-new project.
-- [ ] `--db` flag — select database (mongo/mysql/inmemory).
-- [ ] `--http` flag — select HTTP framework (express/elysia/fastify).
--->
-
 ## [Unreleased]
+
+## [0.2.0] - 2026-08-18
+
+### Added
+
+- `ddd-cqrs init` — bootstrap a new project with Shared Kernel (~43 files).
+  - `--name <project>` — project name for package.json.
+  - `--target <dir>` — target directory (default: current directory).
+  - `--context <ctx>` — bounded context name.
+  - `--no-services` — skip optional services (Password, Token, Email).
+- Atomic generators (Phase 1-3):
+  - `gen entity` — Entity class.
+  - `gen value-object` — Value Object class (primitive and object types).
+  - `gen error` — Domain Error class.
+  - `gen event` — Domain Event class.
+  - `gen subscriber` — Domain Event Subscriber.
+  - `gen service` — Domain Service interface + implementation.
+  - `gen repository` — Repository interface + persistence implementations.
+- `gen router` — separate Router generation (previously combined with controller).
+- `--impl-name` flag for `gen service` — custom implementation class name.
+- `--http <express,elysia>` flag for `gen controller` and `gen router`.
+- `--db <mongo,mysql,inmemory>` flag for `gen repository`.
+- Vercel serverless support in generated Start.ts.
+
+### Changed
+
+- Version bumped to 0.2.0.
+- Updated help documentation with all new commands and examples.
 
 ## [0.1.1] - 2026-08-14
 
