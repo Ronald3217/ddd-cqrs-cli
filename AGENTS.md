@@ -40,13 +40,13 @@ src/Contexts/Scaffolding/
 
 ## CLI Subcommands (v0.1.0)
 
-- `ddd-cqrs gen module --name <Entity> [options]` — full 21-file module
+- `ddd-cqrs gen module --name <Entity> [options]` — full 17-file module
 - `ddd-cqrs gen command --module <M> --name <N>` — 2 files
 - `ddd-cqrs gen query --module <M> --name <N>` — 2 files
 - `ddd-cqrs gen controller --module <M>` — 2 files
 - `ddd-cqrs gen schema --module <M>` — 1 file
 
-Config: `ddd-cqrs.config.json` (keys: `contextRoot`, `defaultContext`, `containerPath`, `ownership`).
+Config: `ddd-cqrs.config.json` (keys: `contextRoot`, `defaultContext`, `containerPath`).
 
 ## Gotchas
 
@@ -56,7 +56,6 @@ Config: `ddd-cqrs.config.json` (keys: `contextRoot`, `defaultContext`, `containe
 - **Container files written before existence check:** Module files persist even if `--container` points to missing file.
 - **No `dev` branch:** Project uses `main` directly.
 - **docs/ is gitignored:** Local working notes, not distributable.
-- **Ownership is OR-combined:** config `ownership: true` + `--owned` flag — no `--no-owned`.
 
 ## CodeGraph
 

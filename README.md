@@ -148,9 +148,7 @@ src/Contexts/Shop/Product/
 │   ├── Commands/
 │   │   ├── CreateProduct/                  # CreateProductCommand + CreateProductCommandHandler
 │   │   ├── UpdateProduct/                  # UpdateProductCommand + UpdateProductCommandHandler
-│   │   ├── DeleteProduct/                  # DeleteProductCommand + DeleteProductCommandHandler
-│   │   ├── AdminUpdateProduct/             # AdminUpdateProductCommand + AdminUpdateProductCommandHandler
-│   │   └── AdminDeleteProduct/             # AdminDeleteProductCommand + AdminDeleteProductCommandHandler
+│   │   └── DeleteProduct/                  # DeleteProductCommand + DeleteProductCommandHandler
 │   └── Queries/
 │       └── GetProductById/                 # GetProductByIdQuery + GetProductByIdQueryHandler
 └── Infrastructure/
@@ -165,7 +163,7 @@ src/Contexts/Shop/Product/
         └── MongooseProductModel.ts
 ```
 
-**21 files** with the default options.
+**17 files** with the default options.
 
 Before the module works end-to-end, you must still:
 
@@ -425,7 +423,6 @@ Any other type is rejected: `Invalid type "foo" for field "title" (valid types: 
 
 - Must be **camelCase** (e.g. `title`, `itemsPerPage`).
 - **Reserved, always rejected:** `id`, `createdAt`, `updatedAt` — these are generated automatically.
-- **Reserved with `--owned`:** `ownerId` — also generated automatically.
 - **Duplicates are rejected** — `Duplicate field name "title" in --fields (each field must appear once)`.
 - A field must be exactly `name:type` — more or fewer than two `:`-separated parts fail with `Invalid field at position N: "raw" (expected name:type, e.g. title:string)`.
 
@@ -452,8 +449,7 @@ Place a `ddd-cqrs.config.json` in the **project root** (where `package.json` liv
 {
   "contextRoot": "src/Contexts",
   "defaultContext": "Shop",
-  "containerPath": "src/Contexts/Shop/Container.ts",
-  "ownership": true
+  "containerPath": "src/Contexts/Shop/Container.ts"
 }
 ```
 
@@ -462,7 +458,6 @@ Place a `ddd-cqrs.config.json` in the **project root** (where `package.json` liv
 | `contextRoot` | string | `src/Contexts` | `--contexts-root` not passed |
 | `defaultContext` | string | `MyContext` | `--context` not passed |
 | `containerPath` | string | none | `--container` not passed |
-| `ownership` | boolean | `false` | `--owned` not passed |
 
 Precedence: **CLI flags > config file > built-in defaults**.
 
@@ -470,12 +465,11 @@ Notes:
 
 - The legacy filename `.ddd-cqrs.json` is also read if `ddd-cqrs.config.json` is absent.
 - If the file is not valid JSON, the CLI prints `[ddd-cqrs] Warning: "ddd-cqrs.config.json" is not valid JSON — using defaults.` and proceeds with defaults.
-- `ownership: true` and `--owned` are combined with OR — if the config enables ownership, the owned pattern is always generated (there is no `--no-owned` flag to turn it off).
 - Config discovery and path resolution are anchored to the project root found by walking up from the current directory.
 
 ## What gets generated
 
-### `gen module` — default options (admin on, not owned): **21 files**
+### `gen module` — default options: **17 files**
 
 ```
 <contextsRoot>/<Context>/<Entity>/
@@ -489,11 +483,7 @@ Notes:
 │   │   ├── Update<Entity>/Update<Entity>Command.ts
 │   │   ├── Update<Entity>/Update<Entity>CommandHandler.ts
 │   │   ├── Delete<Entity>/Delete<Entity>Command.ts
-│   │   ├── Delete<Entity>/Delete<Entity>CommandHandler.ts
-│   │   ├── AdminUpdate<Entity>/AdminUpdate<Entity>Command.ts
-│   │   ├── AdminUpdate<Entity>/AdminUpdate<Entity>CommandHandler.ts
-│   │   ├── AdminDelete<Entity>/AdminDelete<Entity>Command.ts
-│   │   └── AdminDelete<Entity>/AdminDelete<Entity>CommandHandler.ts
+│   │   └── Delete<Entity>/Delete<Entity>CommandHandler.ts
 │   └── Queries/
 │       └── Get<Entity>ById/
 │           ├── Get<Entity>ByIdQuery.ts      # + Get<Entity>ByIdResponse
@@ -514,7 +504,7 @@ Notes:
 | Command | Files | Notes |
 | --- | --- | --- |
 | `init` | 43 | Shared Kernel + project root |
-| `gen module` | 21 | Full module |
+| `gen module` | 17 | Full module |
 | `gen entity` | 1 | Entity class |
 | `gen value-object` | 1 | Value Object class |
 | `gen error` | 1 | Domain Error class |
@@ -646,7 +636,7 @@ ddd-cqrs gen module --name BlogPost --fields "title:string" --context Shop
 | `Error: [ddd-cqrs] Could not find a package.json while walking up from the current directory — run ddd-cqrs from inside a Node.js project` | No `package.json` in `cwd` or any parent directory. | Run the CLI from inside a Node.js project (or a subdirectory of one). |
 | `Error: [ddd-cqrs] Entity name must be singular: "Products" looks plural - use "Product" (e.g. Product, not Products)` | Entity name rejected as plural. | Use the suggested singular. Endings `ss`/`us`/`is` are accepted (`Status`, `Class`, `Bus`, `Analysis`). |
 | `Error: [ddd-cqrs] Entity name must be in PascalCase ... got "blog post"` | Name has spaces/accents or isn't PascalCase. | Use `BlogPost`, `MyContext` — no spaces or accents. |
-| `Error: [ddd-cqrs] Field name "id" is reserved ...` | A reserved field (`id`, `createdAt`, `updatedAt`, or `ownerId` with `--owned`) was passed in `--fields`. | Remove it — it is generated automatically. |
+| `Error: [ddd-cqrs] Field name "id" is reserved ...` | A reserved field (`id`, `createdAt`, `updatedAt`) was passed in `--fields`. | Remove it — it is generated automatically. |
 | `Error: [ddd-cqrs] Duplicate field name "title" in --fields ...` | The same field name appears twice. | Each field must appear once. |
 | `Error: [ddd-cqrs] Invalid type "foo" for field ...` | Unsupported field type. | Use one of `string`, `number`, `boolean`, `Date`, `string[]`. |
 | `Error: Cannot find module '@/Contexts/Scaffolding/Domain/ScaffoldingError'` | Running `tsx` from outside the repo; `@/` resolved against the wrong tsconfig. | Add `--tsconfig <repo>/tsconfig.json` to the `tsx` invocation. |

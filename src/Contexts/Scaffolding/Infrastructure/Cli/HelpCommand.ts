@@ -16,7 +16,7 @@ PROJECT INITIALIZATION
 
 MODULE GENERATION
 
-  gen module        Generate a full DDD-CQRS module (21 files)
+  gen module        Generate a full DDD-CQRS module (17 files)
     Required:       --name <entity>
     Optional:       --fields <name:type,...>  --context <ctx>  --contexts-root <dir>  --container <file>  --dry-run  --force
     Example:        ddd-cqrs gen module --name BlogPost --fields "title:string,views:number"
