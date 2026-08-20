@@ -1,11 +1,11 @@
 import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 import type { FieldSpec } from '@/Contexts/Scaffolding/Domain/FieldSpec';
 
-export function renderControllerTemplate(
+export function renderExpressControllerTemplate(
   names: EntityNames,
   fields: FieldSpec[],
 ): string {
-  const { entity, entityCamel, context } = names;
+  const { entity, context } = names;
   const base = `@/Contexts/${context}/${entity}`;
   const fieldNames = fields.map((f) => f.name);
   const createArgs = fieldNames.join(', ');
@@ -96,5 +96,6 @@ export function renderControllerTemplate(
 
   lines.push('}');
   lines.push('');
+
   return lines.join('\n');
 }

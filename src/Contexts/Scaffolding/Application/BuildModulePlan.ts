@@ -22,9 +22,9 @@ import {
   renderMySQLRepository,
   renderInMemoryRepository,
   renderMongooseModel,
-} from '@/Contexts/Scaffolding/Infrastructure/Templates/PersistenceTemplates';
-import { renderControllerTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/ControllerTemplate';
-import { renderRouterTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/RouterTemplate';
+} from '@/Contexts/Scaffolding/Infrastructure/Templates/Persistence';
+import { renderControllerTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Controller';
+import { renderRouterTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Router';
 
 export class BuildModulePlan {
   build(spec: ModuleSpec, contextsRoot: string): GenerationPlan {
@@ -84,10 +84,10 @@ export class BuildModulePlan {
 
     addFile(`${base}/Infrastructure/Schemas/${names.entity}Schemas.ts`, renderSchemaTemplate(names, spec.fields));
 
-    addFile(`${base}/Infrastructure/Persistence/MongoDB${names.entity}Repository.ts`, renderMongoDBRepository(names, spec.fields));
-    addFile(`${base}/Infrastructure/Persistence/MySQL${names.entity}Repository.ts`, renderMySQLRepository(names, spec.fields));
-    addFile(`${base}/Infrastructure/Persistence/InMemory${names.entity}Repository.ts`, renderInMemoryRepository(names, spec.fields));
-    addFile(`${base}/Infrastructure/Persistence/Mongoose${names.entity}Model.ts`, renderMongooseModel(names, spec.fields));
+    addFile(`${base}/Infrastructure/Persistence/MongoDB${names.entity}Repository.ts`, renderMongoDBRepository(names));
+    addFile(`${base}/Infrastructure/Persistence/MySQL${names.entity}Repository.ts`, renderMySQLRepository(names));
+    addFile(`${base}/Infrastructure/Persistence/InMemory${names.entity}Repository.ts`, renderInMemoryRepository(names));
+    addFile(`${base}/Infrastructure/Persistence/Mongoose${names.entity}Model.ts`, renderMongooseModel(names));
 
     addFile(`${base}/Infrastructure/${names.entity}Controller.ts`, renderControllerTemplate(names, spec.fields));
     addFile(`${base}/Infrastructure/${names.entity}Router.ts`, renderRouterTemplate(names));

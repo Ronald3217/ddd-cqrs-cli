@@ -1,6 +1,6 @@
 import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 
-export function renderRouterTemplate(
+export function renderExpressRouterTemplate(
   names: EntityNames,
 ): string {
   const { entity } = names;
@@ -21,5 +21,6 @@ export function renderRouterTemplate(
   lines.push(`  return router;`);
   lines.push(`}`);
   lines.push('');
+
   return lines.join('\n');
 }

@@ -2,9 +2,9 @@ import { PieceSpec } from '@/Contexts/Scaffolding/Domain/PieceSpec';
 import { deriveEntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 import type { GenerationPlan, HttpFramework } from '@/Contexts/Scaffolding/Application/Plan';
-import { renderControllerTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Controller';
+import { renderRouterTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Router';
 
-export class BuildControllerPlan {
+export class BuildRouterPlan {
   build(spec: PieceSpec, contextsRoot: string, http: HttpFramework = 'express'): GenerationPlan {
     const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
     const base = `${contextsRoot}/${names.context}/${names.entity}/Infrastructure`;
@@ -12,8 +12,8 @@ export class BuildControllerPlan {
     return {
       files: [
         {
-          relPath: `${base}/${names.entity}Controller.ts`,
-          content: renderControllerTemplate(names, spec.fields, http),
+          relPath: `${base}/${names.entity}Router.ts`,
+          content: renderRouterTemplate(names, http),
         },
       ],
       registrations: [],
