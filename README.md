@@ -616,10 +616,10 @@ The package ships `dist/` only and rebuilds on every publish:
 Release workflow (the changelog is the source of truth):
 
 ```bash
-# 1. Update CHANGELOG.md (Keep a Changelog 1.1.0)
-# 2. npm run build && npm publish     # account ronald3217, 2FA → --otp=<code>
-# 3. git tag -a vX.Y.Z -F <message> && git push origin vX.Y.Z
-# 4. gh release create vX.Y.Z -F <message> --title "vX.Y.Z"
+# 1. Update CHANGELOG.md (Keep a Changelog 1.1.0) & commit/push
+# 2. git tag -a vX.Y.Z -m "Release vX.Y.Z" && git push origin vX.Y.Z
+# 3. gh release create vX.Y.Z -F <message> --title "vX.Y.Z"
+# 4. npm publish --//registry.npmjs.org/:_authToken="<token>" --access public
 ```
 
 Post-publish consumption:
