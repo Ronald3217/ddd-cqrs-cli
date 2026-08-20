@@ -4,11 +4,22 @@ import * as path from 'path';
 import { ScaffoldingError } from '@/Contexts/Scaffolding/Domain/ScaffoldingError';
 import { ModuleSpec } from '@/Contexts/Scaffolding/Domain/ModuleSpec';
 import { PieceSpec } from '@/Contexts/Scaffolding/Domain/PieceSpec';
+import { FieldSpec } from '@/Contexts/Scaffolding/Domain/FieldSpec';
 import { BuildModulePlan } from '@/Contexts/Scaffolding/Application/BuildModulePlan';
 import { BuildCommandPlan } from '@/Contexts/Scaffolding/Application/BuildCommandPlan';
 import { BuildQueryPlan } from '@/Contexts/Scaffolding/Application/BuildQueryPlan';
 import { BuildControllerPlan } from '@/Contexts/Scaffolding/Application/BuildControllerPlan';
+import type { HttpFramework } from '@/Contexts/Scaffolding/Application/Plan';
+import { BuildRouterPlan } from '@/Contexts/Scaffolding/Application/BuildRouterPlan';
 import { BuildSchemaPlan } from '@/Contexts/Scaffolding/Application/BuildSchemaPlan';
+import { BuildValueObjectPlan } from '@/Contexts/Scaffolding/Application/BuildValueObjectPlan';
+import { BuildErrorPlan, type ErrorSpec } from '@/Contexts/Scaffolding/Application/BuildErrorPlan';
+import { BuildEntityPlan } from '@/Contexts/Scaffolding/Application/BuildEntityPlan';
+import { BuildEventPlan } from '@/Contexts/Scaffolding/Application/BuildEventPlan';
+import { BuildSubscriberPlan, type SubscriberSpec } from '@/Contexts/Scaffolding/Application/BuildSubscriberPlan';
+import { BuildServicePlan, type ServiceSpec } from '@/Contexts/Scaffolding/Application/BuildServicePlan';
+import { BuildRepositoryPlan, type DbType } from '@/Contexts/Scaffolding/Application/BuildRepositoryPlan';
+import { BuildInitPlan, type InitOptions } from '@/Contexts/Scaffolding/Application/BuildInitPlan';
 import type { GenerationPlan } from '@/Contexts/Scaffolding/Application/Plan';
 import { resolveLayout, loadConfig, resolveProjectRoot } from '@/Contexts/Scaffolding/Infrastructure/ProjectLayout';
 import type { DddCqrsConfig, ProjectLayout } from '@/Contexts/Scaffolding/Infrastructure/ProjectLayout';
@@ -36,10 +47,68 @@ interface PieceCmdOptions extends CommonOptions {
 
 interface ControllerCmdOptions extends CommonOptions {
   module: string;
+  http?: string;
+}
+
+interface RouterCmdOptions extends CommonOptions {
+  module: string;
+  http?: string;
 }
 
 interface SchemaCmdOptions extends CommonOptions {
   module: string;
+}
+
+interface ValueObjectCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+  type: string;
+}
+
+interface ErrorCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+  message: string;
+  status: number;
+}
+
+interface EntityCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+}
+
+interface EventCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+}
+
+interface SubscriberCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+  event: string;
+}
+
+interface ServiceCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+  methods?: string;
+  implName?: string;
+}
+
+interface RepositoryCmdOptions extends CommonOptions {
+  module: string;
+  name: string;
+  db?: string;
+}
+
+interface InitCmdOptions {
+  name: string;
+  target?: string;
+  context?: string;
+  contextsRoot?: string;
+  noServices?: boolean;
+  dryRun: boolean;
+  force: boolean;
 }
 
 const NEUTRAL_DEFAULT_CONTEXT = 'MyContext';
@@ -76,7 +145,7 @@ export function run(): void {
   program
     .name('ddd-cqrs')
     .description('Portable DDD-CQRS scaffolding generator')
-    .version('0.1.0');
+    .version('0.2.0');
 
   const gen = addHelpHint(program
     .command('gen')
@@ -113,12 +182,22 @@ export function run(): void {
 
   const controllerCmd = addHelpHint(gen
     .command('controller')
-    .description('Generate Controller and Router for an existing module')
-    .requiredOption('--module <entity>', 'Entity/module name in PascalCase'));
+    .description('Generate Controller for an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .option('--http <framework>', 'HTTP framework: express (default), elysia', 'express'));
   addFieldsOption(controllerCmd);
   addCommonOptions(controllerCmd);
-  addExamples(controllerCmd, ['gen controller --module BlogPost']);
+  addExamples(controllerCmd, ['gen controller --module BlogPost', 'gen controller --module BlogPost --http express']);
   controllerCmd.action(handleController);
+
+  const routerCmd = addHelpHint(gen
+    .command('router')
+    .description('Generate Router for an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .option('--http <framework>', 'HTTP framework: express (default), elysia', 'express'));
+  addCommonOptions(routerCmd);
+  addExamples(routerCmd, ['gen router --module BlogPost', 'gen router --module BlogPost --http express']);
+  routerCmd.action(handleRouter);
 
   const schemaCmd = addHelpHint(gen
     .command('schema')
@@ -129,9 +208,109 @@ export function run(): void {
   addExamples(schemaCmd, ['gen schema --module BlogPost --fields "title:string,views:number"']);
   schemaCmd.action(handleSchema);
 
+  const valueObjectCmd = addHelpHint(gen
+    .command('value-object')
+    .description('Generate a Value Object class into an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <voName>', 'Value Object name in PascalCase (e.g. Email, Slug)')
+    .requiredOption('--type <type>', 'Value type: string, number, boolean, Date, string[], object'));
+  addFieldsOption(valueObjectCmd);
+  addCommonOptions(valueObjectCmd);
+  addExamples(valueObjectCmd, [
+    'gen value-object --module User --name Email --type string',
+    'gen value-object --module BlogPost --name PublishedAt --type Date',
+    'gen value-object --module User --name Address --type object --fields "street:string,city:string,country:string"',
+  ]);
+  valueObjectCmd.action(handleValueObject);
+
+  const errorCmd = addHelpHint(gen
+    .command('error')
+    .description('Generate a Domain Error class into an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <errorName>', 'Error class name in PascalCase (e.g. InvalidCredentialsError)')
+    .option('--message <message>', 'Error message', '${name} error')
+    .option('--status <code>', 'HTTP status code', '400'));
+  addCommonOptions(errorCmd);
+  addExamples(errorCmd, ['gen error --module User --name InvalidCredentialsError --message "Invalid credentials" --status 401', 'gen error --module BlogPost --name SlugTakenError --message "Slug already in use" --status 409']);
+  errorCmd.action(handleError);
+
+  const entityCmd = addHelpHint(gen
+    .command('entity')
+    .description('Generate Entity class into an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <entityName>', 'Entity name in PascalCase (e.g. BlogPost)'));
+  addFieldsOption(entityCmd);
+  addCommonOptions(entityCmd);
+  addExamples(entityCmd, ['gen entity --module BlogPost --name BlogPost --fields "title:string,views:number"', 'gen entity --module User --name User --fields "email:string,name:string"']);
+  entityCmd.action(handleEntity);
+
+  const eventCmd = addHelpHint(gen
+    .command('event')
+    .description('Generate a Domain Event class into an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <eventName>', 'Event name in PascalCase (e.g. LinkCreatedDomainEvent)'));
+  addFieldsOption(eventCmd);
+  addCommonOptions(eventCmd);
+  addExamples(eventCmd, ['gen event --module Link --name LinkCreatedDomainEvent --fields "title:string,destination:string"', 'gen event --module User --name UserRegisteredDomainEvent --fields "email:string,firstName:string"']);
+  eventCmd.action(handleEvent);
+
+  const subscriberCmd = addHelpHint(gen
+    .command('subscriber')
+    .description('Generate a Domain Event Subscriber class into an existing module')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <subscriberName>', 'Subscriber name in PascalCase (e.g. SendWelcomeEmailOnUserRegistered)')
+    .requiredOption('--event <eventName>', 'Event class name to subscribe to (e.g. UserRegisteredDomainEvent)'));
+  addFieldsOption(subscriberCmd);
+  addCommonOptions(subscriberCmd);
+  addExamples(subscriberCmd, ['gen subscriber --module User --name SendWelcomeEmailOnUserRegistered --event UserRegisteredDomainEvent', 'gen subscriber --module Link --name LogLinkCreated --event LinkCreatedDomainEvent --fields "logger:Console"']);
+  subscriberCmd.action(handleSubscriber);
+
+  const serviceCmd = addHelpHint(gen
+    .command('service')
+    .description('Generate a Domain Service interface and Infrastructure implementation')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <serviceName>', 'Service interface name in PascalCase (e.g. PasswordService)')
+    .option('--methods <methods>', 'Comma-separated method names (e.g. hash,compare,validate)')
+    .option('--impl-name <implName>', 'Implementation class name (default: {Name}Impl, e.g. BcryptPasswordService)'));
+  addCommonOptions(serviceCmd);
+  addExamples(serviceCmd, ['gen service --module User --name PasswordService --methods "hash,compare"', 'gen service --module User --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService', 'gen service --module Shared --name AuthMiddleware --methods "handle,validateToken" --impl-name JwtAuthMiddleware']);
+  serviceCmd.action(handleService);
+
+  const repositoryCmd = addHelpHint(gen
+    .command('repository')
+    .description('Generate Repository interface and persistence implementations')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--name <entityName>', 'Entity name in PascalCase (e.g. BlogPost)')
+    .option('--db <databases>', 'Database implementations: mongo,mysql,inmemory (comma-separated, default: all)'));
+  addCommonOptions(repositoryCmd);
+  addExamples(repositoryCmd, ['gen repository --module BlogPost --name BlogPost --db "mongo,mysql"', 'gen repository --module User --name User --db "inmemory"']);
+  repositoryCmd.action(handleRepository);
+
   gen.action(() => {
     gen.help();
   });
+
+  // ─── init command (top-level) ──────────────────────────────────────────
+  const initCmd = addHelpHint(
+    program
+      .command('init')
+      .description('Bootstrap a new project with Shared Kernel (~40 files)')
+      .requiredOption('--name <project>', 'Project name in kebab-case (e.g. my-backend)')
+      .option('--target <dir>', 'Target directory to write files (default: current directory)', '.')
+      .option('--context <context>', `Bounded context name (default: ${NEUTRAL_DEFAULT_CONTEXT})`)
+      .option('--contexts-root <dir>', `Contexts root directory (default: ${DEFAULT_CONTEXTS_ROOT})`)
+      .option('--no-services', 'Skip optional services (PasswordService, TokenService, EmailService)')
+      .option('--dry-run', 'Show the generation plan without writing files', false)
+      .option('--force', 'Overwrite existing files', false),
+  );
+  addExamples(initCmd, [
+    'init --name my-backend',
+    'init --name my-backend --target /path/to/project',
+    'init --name my-backend --context ECommerce',
+    'init --name my-backend --dry-run',
+  ]);
+  initCmd.addHelpText('afterAll', '\nNOTE: Generates Express-specific files (types, cors, server.ts) by default.\n      If using Elysia/Fastify, delete those files and create your HTTP layer.');
+  initCmd.action(handleInit);
 
   registerHelpCommand(program);
 
@@ -185,7 +364,18 @@ async function handleController(opts: ControllerCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('controller', opts.module, '', opts.fields, resolved.context);
-    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot);
+    const http = (opts.http ?? 'express') as HttpFramework;
+    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot, http);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleRouter(opts: RouterCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const spec = PieceSpec.create('controller', opts.module, '', undefined, resolved.context);
+    const http = (opts.http ?? 'express') as HttpFramework;
+    const plan = new BuildRouterPlan().build(spec, layout.contextsRoot, http);
     await execute(plan, resolved, layout.containerPath);
   });
 }
@@ -196,6 +386,130 @@ async function handleSchema(opts: SchemaCmdOptions): Promise<void> {
     const spec = PieceSpec.create('schema', opts.module, '', opts.fields, resolved.context);
     const plan = new BuildSchemaPlan().build(spec, layout.contextsRoot);
     await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleValueObject(opts: ValueObjectCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const isObjectType = opts.type === 'object';
+    
+    if (isObjectType && !opts.fields) {
+      throw new ScaffoldingError('Object type requires --fields option');
+    }
+    
+    let spec: PieceSpec;
+    
+    if (isObjectType) {
+      // Object type: pass fields directly, BuildValueObjectPlan will handle it
+      spec = PieceSpec.create('value-object', opts.module, opts.name, opts.fields, resolved.context);
+    } else {
+      // Primitive type: create a single 'value' field with the specified type
+      const fieldsRaw = `value:${opts.type}`;
+      spec = PieceSpec.create('value-object', opts.module, opts.name, fieldsRaw, resolved.context);
+    }
+    
+    const plan = new BuildValueObjectPlan().build(spec, layout.contextsRoot, isObjectType);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleError(opts: ErrorCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const errorSpec: ErrorSpec = {
+      moduleName: opts.module,
+      errorName: opts.name,
+      message: opts.message,
+      statusCode: parseInt(opts.status as any, 10),
+      context: resolved.context,
+    };
+    const plan = new BuildErrorPlan().build(errorSpec, layout.contextsRoot);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleEntity(opts: EntityCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const spec = PieceSpec.create('entity', opts.module, opts.name, opts.fields, resolved.context);
+    const plan = new BuildEntityPlan().build(spec, layout.contextsRoot);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleEvent(opts: EventCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const spec = PieceSpec.create('event', opts.module, opts.name, opts.fields, resolved.context);
+    const plan = new BuildEventPlan().build(spec, layout.contextsRoot);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleSubscriber(opts: SubscriberCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const dependencies = FieldSpec.parseList(opts.fields);
+    const subscriberSpec: SubscriberSpec = {
+      moduleName: opts.module,
+      subscriberName: opts.name,
+      eventName: opts.event,
+      dependencies,
+      context: resolved.context,
+    };
+    const plan = new BuildSubscriberPlan().build(subscriberSpec, layout.contextsRoot);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleService(opts: ServiceCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    const methods = opts.methods
+      ? opts.methods.split(',').map((m) => m.trim()).filter(Boolean)
+      : [];
+    const serviceSpec: ServiceSpec = {
+      moduleName: opts.module,
+      serviceName: opts.name,
+      methods,
+      context: resolved.context,
+    };
+    const plan = new BuildServicePlan().build(serviceSpec, layout.contextsRoot, opts.implName);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleRepository(opts: RepositoryCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const { resolved, layout } = resolveExecution(opts);
+    // Repository doesn't need fields - they come from the Entity
+    const spec = PieceSpec.create('repository', opts.module, opts.name, undefined, resolved.context);
+    // Parse --db flag, default to all
+    const dbs: DbType[] = opts.db
+      ? opts.db.split(',').map((d) => d.trim() as DbType).filter(Boolean)
+      : ['mongo', 'mysql', 'inmemory'];
+    const plan = new BuildRepositoryPlan().build(spec, layout.contextsRoot, dbs);
+    await execute(plan, resolved, layout.containerPath);
+  });
+}
+
+async function handleInit(opts: InitCmdOptions): Promise<void> {
+  await withErrors(async () => {
+    const config: DddCqrsConfig = loadConfig(resolveProjectRoot(process.cwd()));
+    const context = opts.context ?? config.defaultContext ?? NEUTRAL_DEFAULT_CONTEXT;
+    const target = opts.target ?? '.';
+    const contextsRoot = opts.contextsRoot ?? `${target}/${DEFAULT_CONTEXTS_ROOT}`;
+
+    const initOptions: InitOptions = {
+      contextName: context,
+      projectName: opts.name,
+      contextsRoot,
+      includeServices: opts.noServices !== true,
+    };
+
+    const plan = new BuildInitPlan().build(initOptions);
+    await executeInit(plan, opts, target);
   });
 }
 
@@ -233,6 +547,30 @@ async function execute(plan: GenerationPlan, opts: CommonOptions, containerPath:
   console.log('');
   if (opts.dryRun) {
     console.log('Dry run — no files were written.');
+  }
+}
+
+async function executeInit(plan: GenerationPlan, opts: InitCmdOptions, target: string): Promise<void> {
+  const writer = new FileWriter({ force: opts.force, dryRun: opts.dryRun, baseDir: target });
+  const cwd = process.cwd();
+
+  console.log('');
+  console.log(`Files (${plan.files.length}):`);
+  for (const file of plan.files) {
+    const result = writer.write(file.relPath, file.content);
+    const label = result.status === 'created' ? '  +' : result.status === 'overwritten' ? '  ~' : '  =';
+    console.log(`${label} ${path.relative(cwd, result.filePath)}`);
+  }
+
+  console.log('');
+  if (opts.dryRun) {
+    console.log('Dry run — no files were written.');
+  } else {
+    console.log('Next steps:');
+    console.log(`  1. cd ${target}`);
+    console.log('  2. npm install');
+    console.log('  3. npm run build');
+    console.log('  4. ddd-cqrs gen module --name MyEntity --fields "field:type"');
   }
 }
 
