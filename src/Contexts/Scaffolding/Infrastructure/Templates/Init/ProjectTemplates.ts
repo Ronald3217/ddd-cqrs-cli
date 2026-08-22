@@ -1,4 +1,4 @@
-export function renderTsConfig(contextName: string): string {
+export function renderTsConfig(contextName: string, importBase: string = '@/Contexts'): string {
   return `{
   "compilerOptions": {
     "target": "ES2022",
@@ -10,9 +10,9 @@ export function renderTsConfig(contextName: string): string {
     "paths": {
       "@/*": ["./src/*"],
       "@/Apps/*": ["./src/Apps/*"],
-      "@/Contexts/*": ["./src/Contexts/*"],
-      "@/Contexts/Shared/*": ["./src/Contexts/Shared/*"],
-      "@/Contexts/${contextName}/*": ["./src/Contexts/${contextName}/*"]
+      "${importBase}/*": ["./src/${importBase.replace('@/', '')}/*"],
+      "${importBase}/Shared/*": ["./src/${importBase.replace('@/', '')}/Shared/*"],
+      "${importBase}/${contextName}/*": ["./src/${importBase.replace('@/', '')}/${contextName}/*"]
     },
     "types": ["node"],
     "esModuleInterop": true,
@@ -74,20 +74,20 @@ export function renderPackageJson(projectName: string): string {
 `;
 }
 
-export function renderContainer(contextName: string): string {
-  return `import { env } from '@/Contexts/Shared/Infrastructure/config/env';
-import { CommandBus } from '@/Contexts/Shared/Domain/Bus/CommandBus';
-import { QueryBus } from '@/Contexts/Shared/Domain/Bus/QueryBus';
-import { EventBus } from '@/Contexts/Shared/Domain/Bus/EventBus';
+export function renderContainer(contextName: string, importBase: string = '@/Contexts'): string {
+  return `import { env } from '${importBase}/Shared/Infrastructure/config/env';
+import { CommandBus } from '${importBase}/Shared/Domain/Bus/CommandBus';
+import { QueryBus } from '${importBase}/Shared/Domain/Bus/QueryBus';
+import { EventBus } from '${importBase}/Shared/Domain/Bus/EventBus';
 
 // Buses
-import { InMemoryCommandBus } from '@/Contexts/Shared/Infrastructure/Bus/InMemoryCommandBus';
-import { InMemoryQueryBus } from '@/Contexts/Shared/Infrastructure/Bus/InMemoryQueryBus';
-import { InMemoryEventBus } from '@/Contexts/Shared/Infrastructure/Bus/InMemoryEventBus';
+import { InMemoryCommandBus } from '${importBase}/Shared/Infrastructure/Bus/InMemoryCommandBus';
+import { InMemoryQueryBus } from '${importBase}/Shared/Infrastructure/Bus/InMemoryQueryBus';
+import { InMemoryEventBus } from '${importBase}/Shared/Infrastructure/Bus/InMemoryEventBus';
 
 // Infrastructure services
-import { UuidGenerator } from '@/Contexts/Shared/Infrastructure/UuidGenerator';
-import { IdGenerator } from '@/Contexts/Shared/Domain/IdGenerator';
+import { UuidGenerator } from '${importBase}/Shared/Infrastructure/UuidGenerator';
+import { IdGenerator } from '${importBase}/Shared/Domain/IdGenerator';
 
 export interface ContainerOptions {
   // Add repository options here as you create modules
@@ -120,11 +120,11 @@ export class Container {
 `;
 }
 
-export function renderServerClass(): string {
+export function renderServerClass(importBase: string = '@/Contexts'): string {
   return `import express from 'express';
 import cors from 'cors';
-import { env } from '@/Contexts/Shared/Infrastructure/config/env';
-import { corsOptions } from '@/Contexts/Shared/Infrastructure/config/cors';
+import { env } from '${importBase}/Shared/Infrastructure/config/env';
+import { corsOptions } from '${importBase}/Shared/Infrastructure/config/cors';
 import { Container } from '@/Apps/Backend/DependencyInjection/Container';
 
 export class Server {

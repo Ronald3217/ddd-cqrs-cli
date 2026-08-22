@@ -8,7 +8,7 @@ export function renderErrorTemplate(
 ): string {
   const lines: string[] = [];
 
-  lines.push(`import { DomainError } from '@/Contexts/Shared/Domain/DomainError';`);
+  lines.push(`import { DomainError } from '${names.importBase}/Shared/Domain/DomainError';`);
   lines.push('');
   lines.push(`export class ${errorName} extends DomainError {`);
   lines.push(`  constructor() {`);

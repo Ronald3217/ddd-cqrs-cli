@@ -16,8 +16,8 @@ export function renderSubscriberTemplate(
 
   const lines: string[] = [];
 
-  lines.push(`import { DomainEventSubscriber } from '@/Contexts/Shared/Domain/Events/DomainEventSubscriber';`);
-  lines.push(`import { ${eventName} } from '@/Contexts/${context}/${entity}/Domain/Events/${eventName}';`);
+  lines.push(`import { DomainEventSubscriber } from '${names.importBase}/Shared/Domain/Events/DomainEventSubscriber';`);
+  lines.push(`import { ${eventName} } from '${names.importBase}/${context}/${entity}/Domain/Events/${eventName}';`);
   lines.push('');
   lines.push(`export class ${subscriberName}`);
   lines.push(`  implements DomainEventSubscriber<${eventName}>`);

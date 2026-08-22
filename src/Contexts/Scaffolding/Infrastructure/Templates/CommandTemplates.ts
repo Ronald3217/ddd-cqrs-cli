@@ -6,7 +6,7 @@ export function renderCreateCommand(names: EntityNames, fields: FieldSpec[]): st
   const { entity } = names;
   const params = fields.map((f) => `    public readonly ${f.name}: ${tsType(f.type)},`).join('\n');
 
-  return `import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
+  return `import { Command } from '${names.importBase}/Shared/Domain/Commands/Command';
 
 export class Create${entity}Command extends Command {
   constructor(
@@ -22,11 +22,11 @@ export function renderCreateCommandHandler(names: EntityNames, fields: FieldSpec
   const { entity, entityCamel, context } = names;
   const assign = fields.map((f) => `      ${f.name}: command.${f.name},`).join('\n');
 
-  return `import { CommandHandler } from '@/Contexts/Shared/Domain/Commands/CommandHandler';
-import { IdGenerator } from '@/Contexts/Shared/Domain/IdGenerator';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { ${entity} } from '@/Contexts/${context}/${entity}/Domain/${entity}';
-import { Create${entity}Command } from '@/Contexts/${context}/${entity}/Application/Commands/Create${entity}/Create${entity}Command';
+  return `import { CommandHandler } from '${names.importBase}/Shared/Domain/Commands/CommandHandler';
+import { IdGenerator } from '${names.importBase}/Shared/Domain/IdGenerator';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { ${entity} } from '${names.importBase}/${context}/${entity}/Domain/${entity}';
+import { Create${entity}Command } from '${names.importBase}/${context}/${entity}/Application/Commands/Create${entity}/Create${entity}Command';
 
 export class Create${entity}CommandHandler implements CommandHandler<Create${entity}Command> {
   constructor(
@@ -53,7 +53,7 @@ export function renderUpdateCommand(names: EntityNames, fields: FieldSpec[]): st
   const { entity, entityCamel } = names;
   const params = fields.map((f) => `    public readonly ${f.name}?: ${tsType(f.type)},`).join('\n');
 
-  return `import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
+  return `import { Command } from '${names.importBase}/Shared/Domain/Commands/Command';
 
 export class Update${entity}Command extends Command {
   constructor(
@@ -70,10 +70,10 @@ export function renderUpdateCommandHandler(names: EntityNames, fields: FieldSpec
   const { entity, entityCamel, context } = names;
   const assign = fields.map((f) => `      ${f.name}: command.${f.name},`).join('\n');
 
-  return `import { CommandHandler } from '@/Contexts/Shared/Domain/Commands/CommandHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { Update${entity}Command } from '@/Contexts/${context}/${entity}/Application/Commands/Update${entity}/Update${entity}Command';
-import { NotFoundError } from '@/Contexts/Shared/Domain/Errors/NotFoundError';
+  return `import { CommandHandler } from '${names.importBase}/Shared/Domain/Commands/CommandHandler';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { Update${entity}Command } from '${names.importBase}/${context}/${entity}/Application/Commands/Update${entity}/Update${entity}Command';
+import { NotFoundError } from '${names.importBase}/Shared/Domain/Errors/NotFoundError';
 
 export class Update${entity}CommandHandler implements CommandHandler<Update${entity}Command> {
   constructor(private readonly ${entityCamel}Repository: ${entity}Repository) {}
@@ -99,7 +99,7 @@ ${assign}
 export function renderDeleteCommand(names: EntityNames): string {
   const { entity, entityCamel } = names;
 
-  return `import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
+  return `import { Command } from '${names.importBase}/Shared/Domain/Commands/Command';
 
 export class Delete${entity}Command extends Command {
   constructor(
@@ -114,10 +114,10 @@ export class Delete${entity}Command extends Command {
 export function renderDeleteCommandHandler(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
 
-  return `import { CommandHandler } from '@/Contexts/Shared/Domain/Commands/CommandHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { Delete${entity}Command } from '@/Contexts/${context}/${entity}/Application/Commands/Delete${entity}/Delete${entity}Command';
-import { NotFoundError } from '@/Contexts/Shared/Domain/Errors/NotFoundError';
+  return `import { CommandHandler } from '${names.importBase}/Shared/Domain/Commands/CommandHandler';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { Delete${entity}Command } from '${names.importBase}/${context}/${entity}/Application/Commands/Delete${entity}/Delete${entity}Command';
+import { NotFoundError } from '${names.importBase}/Shared/Domain/Errors/NotFoundError';
 
 export class Delete${entity}CommandHandler implements CommandHandler<Delete${entity}Command> {
   constructor(private readonly ${entityCamel}Repository: ${entity}Repository) {}
@@ -140,7 +140,7 @@ export function renderGenericCommand(names: EntityNames, action: string, fields:
   const { entity, entityCamel } = names;
   const params = fields.map((f) => `    public readonly ${f.name}?: ${tsType(f.type)},`).join('\n');
 
-  return `import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
+  return `import { Command } from '${names.importBase}/Shared/Domain/Commands/Command';
 
 export class ${action}${entity}Command extends Command {
   constructor(
@@ -158,10 +158,10 @@ export function renderGenericCommandHandler(names: EntityNames, action: string, 
   const className = `${action}${entity}Command`;
   const handlerClassName = `${className}Handler`;
 
-  return `import { CommandHandler } from '@/Contexts/Shared/Domain/Commands/CommandHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { ${className} } from '@/Contexts/${context}/${entity}/Application/Commands/${className}/${className}';
-import { NotFoundError } from '@/Contexts/Shared/Domain/Errors/NotFoundError';
+  return `import { CommandHandler } from '${names.importBase}/Shared/Domain/Commands/CommandHandler';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { ${className} } from '${names.importBase}/${context}/${entity}/Application/Commands/${className}/${className}';
+import { NotFoundError } from '${names.importBase}/Shared/Domain/Errors/NotFoundError';
 
 export class ${handlerClassName} implements CommandHandler<${className}> {
   constructor(

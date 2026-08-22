@@ -3,7 +3,7 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 export function renderRepositoryTemplate(names: EntityNames): string {
   const { entity, context } = names;
 
-  return `import { ${entity} } from '@/Contexts/${context}/${entity}/Domain/${entity}';
+  return `import { ${entity} } from '${names.importBase}/${context}/${entity}/Domain/${entity}';
 
 export interface ${entity}Repository {
   save(entity: ${entity}): Promise<void>;

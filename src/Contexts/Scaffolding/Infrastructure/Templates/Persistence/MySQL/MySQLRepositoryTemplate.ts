@@ -2,12 +2,12 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 
 export function renderMySQLRepositoryTemplate(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
-  const base = `@/Contexts/${context}/${entity}`;
+  const base = `${names.importBase}/${context}/${entity}`;
 
-  return `import { ${entity} as ${entity}Model } from '@/Contexts/Shared/Infrastructure/Persistence/sequelize';
+  return `import { ${entity} as ${entity}Model } from '${names.importBase}/Shared/Infrastructure/Persistence/sequelize';
 import { ${entity} as ${entity}Entity } from '${base}/Domain/${entity}';
 import { ${entity}Repository } from '${base}/Domain/${entity}Repository';
-import { DatabaseError } from '@/Contexts/Shared/Domain/Errors/DatabaseError';
+import { DatabaseError } from '${names.importBase}/Shared/Domain/Errors/DatabaseError';
 
 export class MySQL${entity}Repository implements ${entity}Repository {
   async save(${entityCamel}: ${entity}Entity): Promise<void> {

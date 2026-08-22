@@ -2,12 +2,12 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 
 export function renderMongoDBRepositoryTemplate(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
-  const base = `@/Contexts/${context}/${entity}`;
+  const base = `${names.importBase}/${context}/${entity}`;
 
   return `import { ${entity}Model } from './Mongoose${entity}Model';
 import { ${entity} } from '${base}/Domain/${entity}';
 import { ${entity}Repository } from '${base}/Domain/${entity}Repository';
-import { DatabaseError } from '@/Contexts/Shared/Domain/Errors/DatabaseError';
+import { DatabaseError } from '${names.importBase}/Shared/Domain/Errors/DatabaseError';
 
 export class MongoDB${entity}Repository implements ${entity}Repository {
   async save(${entityCamel}: ${entity}): Promise<void> {

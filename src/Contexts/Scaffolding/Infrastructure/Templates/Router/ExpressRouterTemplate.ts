@@ -7,7 +7,7 @@ export function renderExpressRouterTemplate(
 
   const lines: string[] = [];
   lines.push(`import { Request, Router } from 'express';`);
-  lines.push(`import auth from '@/Contexts/Shared/Infrastructure/middlewares/auth';`);
+  lines.push(`import auth from '${names.importBase}/Shared/Infrastructure/middlewares/auth';`);
   lines.push(`import { ${entity}Controller } from './${entity}Controller';`);
   lines.push('');
   lines.push(`export default function ${entity}Router(controller: ${entity}Controller): Router {`);

@@ -6,7 +6,7 @@ export function renderExpressControllerTemplate(
   fields: FieldSpec[],
 ): string {
   const { entity, context } = names;
-  const base = `@/Contexts/${context}/${entity}`;
+  const base = `${names.importBase}/${context}/${entity}`;
   const fieldNames = fields.map((f) => f.name);
   const createArgs = fieldNames.join(', ');
   const updateArgs = ['req.params.id as string', ...fieldNames].join(', ');
@@ -14,9 +14,9 @@ export function renderExpressControllerTemplate(
 
   const lines: string[] = [];
   lines.push(`import { NextFunction, Request, Response } from 'express';`);
-  lines.push(`import { CustomRequest } from '@/Contexts/Shared/Infrastructure/types';`);
-  lines.push(`import { CommandBus } from '@/Contexts/Shared/Domain/Bus/CommandBus';`);
-  lines.push(`import { QueryBus } from '@/Contexts/Shared/Domain/Bus/QueryBus';`);
+  lines.push(`import { CustomRequest } from '${names.importBase}/Shared/Infrastructure/types';`);
+  lines.push(`import { CommandBus } from '${names.importBase}/Shared/Domain/Bus/CommandBus';`);
+  lines.push(`import { QueryBus } from '${names.importBase}/Shared/Domain/Bus/QueryBus';`);
   lines.push(`import { Create${entity}Command } from '${base}/Application/Commands/Create${entity}/Create${entity}Command';`);
   lines.push(`import { Update${entity}Command } from '${base}/Application/Commands/Update${entity}/Update${entity}Command';`);
   lines.push(`import { Delete${entity}Command } from '${base}/Application/Commands/Delete${entity}/Delete${entity}Command';`);

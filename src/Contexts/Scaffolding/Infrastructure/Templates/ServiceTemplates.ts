@@ -39,7 +39,7 @@ export function renderServiceImplementationTemplate(
 
   const lines: string[] = [];
 
-  lines.push(`import { ${serviceName} } from '@/Contexts/${context}/${entity}/Domain/Services/${serviceName}';`);
+  lines.push(`import { ${serviceName} } from '${names.importBase}/${context}/${entity}/Domain/Services/${serviceName}';`);
   lines.push('');
   lines.push(`export class ${implName} implements ${serviceName} {`);
   if (methods.length > 0) {

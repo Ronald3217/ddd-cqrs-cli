@@ -2,8 +2,8 @@
 // Domain Layer
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function renderCommandBus(): string {
-  return `import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
+export function renderCommandBus(importBase: string = '@/Contexts'): string {
+  return `import { Command } from '${importBase}/Shared/Domain/Commands/Command';
 
 export interface CommandBus {
   dispatch<C extends Command, R = void>(command: C): Promise<R>;
@@ -11,9 +11,9 @@ export interface CommandBus {
 `;
 }
 
-export function renderQueryBus(): string {
-  return `import { Query } from '@/Contexts/Shared/Domain/Queries/Query';
-import { Response } from '@/Contexts/Shared/Domain/Response';
+export function renderQueryBus(importBase: string = '@/Contexts'): string {
+  return `import { Query } from '${importBase}/Shared/Domain/Queries/Query';
+import { Response } from '${importBase}/Shared/Domain/Response';
 
 export interface QueryBus {
   ask<T extends Response>(query: Query): Promise<T>;
@@ -21,8 +21,8 @@ export interface QueryBus {
 `;
 }
 
-export function renderEventBus(): string {
-  return `import { DomainEvent } from '@/Contexts/Shared/Domain/Events/DomainEvent';
+export function renderEventBus(importBase: string = '@/Contexts'): string {
+  return `import { DomainEvent } from '${importBase}/Shared/Domain/Events/DomainEvent';
 
 export interface EventBus {
   publish(events: DomainEvent[]): void;
@@ -50,9 +50,9 @@ export function renderQuery(): string {
 `;
 }
 
-export function renderQueryHandler(): string {
+export function renderQueryHandler(importBase: string = '@/Contexts'): string {
   return `import { Query } from './Query';
-import { Response } from '@/Contexts/Shared/Domain/Response';
+import { Response } from '${importBase}/Shared/Domain/Response';
 
 export interface QueryHandler<T extends Query, R extends Response> {
   handle(query: T): Promise<R>;
@@ -78,8 +78,8 @@ export function renderDomainEvent(): string {
 `;
 }
 
-export function renderDomainEventSubscriber(): string {
-  return `import { DomainEvent } from '@/Contexts/Shared/Domain/Events/DomainEvent';
+export function renderDomainEventSubscriber(importBase: string = '@/Contexts'): string {
+  return `import { DomainEvent } from '${importBase}/Shared/Domain/Events/DomainEvent';
 
 export interface DomainEventSubscriber<T extends DomainEvent> {
   handle(event: T): Promise<void>;
@@ -153,8 +153,8 @@ export { UnauthorizedError } from './UnauthorizedError';
 `;
 }
 
-export function renderApiError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderApiError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class ApiError extends DomainError {
   constructor(message: string, statusCode: number = 500) {
@@ -164,8 +164,8 @@ export class ApiError extends DomainError {
 `;
 }
 
-export function renderBadRequestError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderBadRequestError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class BadRequestError extends DomainError {
   constructor(message: string) {
@@ -175,8 +175,8 @@ export class BadRequestError extends DomainError {
 `;
 }
 
-export function renderConflictError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderConflictError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class ConflictError extends DomainError {
   constructor(message: string) {
@@ -186,8 +186,8 @@ export class ConflictError extends DomainError {
 `;
 }
 
-export function renderDatabaseError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderDatabaseError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class DatabaseError extends DomainError {
   constructor(message: string) {
@@ -197,8 +197,8 @@ export class DatabaseError extends DomainError {
 `;
 }
 
-export function renderNotFoundError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderNotFoundError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class NotFoundError extends DomainError {
   constructor(resource: string = 'Resource') {
@@ -208,8 +208,8 @@ export class NotFoundError extends DomainError {
 `;
 }
 
-export function renderUnauthorizedError(): string {
-  return `import { DomainError } from '@/Contexts/Shared/Domain/DomainError';
+export function renderUnauthorizedError(importBase: string = '@/Contexts'): string {
+  return `import { DomainError } from '${importBase}/Shared/Domain/DomainError';
 
 export class UnauthorizedError extends DomainError {
   constructor(message: string = 'Unauthorized') {
@@ -274,10 +274,10 @@ export function renderDocumentIdValueObject(): string {
 // Infrastructure Layer
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function renderInMemoryCommandBus(): string {
-  return `import { CommandBus } from '@/Contexts/Shared/Domain/Bus/CommandBus';
-import { Command } from '@/Contexts/Shared/Domain/Commands/Command';
-import { CommandHandler } from '@/Contexts/Shared/Domain/Commands/CommandHandler';
+export function renderInMemoryCommandBus(importBase: string = '@/Contexts'): string {
+  return `import { CommandBus } from '${importBase}/Shared/Domain/Bus/CommandBus';
+import { Command } from '${importBase}/Shared/Domain/Commands/Command';
+import { CommandHandler } from '${importBase}/Shared/Domain/Commands/CommandHandler';
 
 export class InMemoryCommandBus implements CommandBus {
   private handlers: Map<string, CommandHandler<Command, unknown>> = new Map();
@@ -301,11 +301,11 @@ export class InMemoryCommandBus implements CommandBus {
 `;
 }
 
-export function renderInMemoryQueryBus(): string {
-  return `import { QueryBus } from '@/Contexts/Shared/Domain/Bus/QueryBus';
-import { Query } from '@/Contexts/Shared/Domain/Queries/Query';
-import { QueryHandler } from '@/Contexts/Shared/Domain/Queries/QueryHandler';
-import { Response } from '@/Contexts/Shared/Domain/Response';
+export function renderInMemoryQueryBus(importBase: string = '@/Contexts'): string {
+  return `import { QueryBus } from '${importBase}/Shared/Domain/Bus/QueryBus';
+import { Query } from '${importBase}/Shared/Domain/Queries/Query';
+import { QueryHandler } from '${importBase}/Shared/Domain/Queries/QueryHandler';
+import { Response } from '${importBase}/Shared/Domain/Response';
 
 export class InMemoryQueryBus implements QueryBus {
   private handlers: Map<string, QueryHandler<Query, Response>> = new Map();
@@ -329,10 +329,10 @@ export class InMemoryQueryBus implements QueryBus {
 `;
 }
 
-export function renderInMemoryEventBus(): string {
-  return `import { EventBus } from '@/Contexts/Shared/Domain/Bus/EventBus';
-import { DomainEvent } from '@/Contexts/Shared/Domain/Events/DomainEvent';
-import { DomainEventSubscriber } from '@/Contexts/Shared/Domain/Events/DomainEventSubscriber';
+export function renderInMemoryEventBus(importBase: string = '@/Contexts'): string {
+  return `import { EventBus } from '${importBase}/Shared/Domain/Bus/EventBus';
+import { DomainEvent } from '${importBase}/Shared/Domain/Events/DomainEvent';
+import { DomainEventSubscriber } from '${importBase}/Shared/Domain/Events/DomainEventSubscriber';
 
 export class InMemoryEventBus implements EventBus {
   private subscribers: Map<string, DomainEventSubscriber<DomainEvent>[]>;
@@ -366,11 +366,11 @@ export class InMemoryEventBus implements EventBus {
 `;
 }
 
-export function renderEventEmitterEventBus(): string {
+export function renderEventEmitterEventBus(importBase: string = '@/Contexts'): string {
   return `import { EventEmitter } from 'events';
-import { EventBus } from '@/Contexts/Shared/Domain/Bus/EventBus';
-import { DomainEvent } from '@/Contexts/Shared/Domain/Events/DomainEvent';
-import { DomainEventSubscriber } from '@/Contexts/Shared/Domain/Events/DomainEventSubscriber';
+import { EventBus } from '${importBase}/Shared/Domain/Bus/EventBus';
+import { DomainEvent } from '${importBase}/Shared/Domain/Events/DomainEvent';
+import { DomainEventSubscriber } from '${importBase}/Shared/Domain/Events/DomainEventSubscriber';
 
 export class EventEmitterEventBus implements EventBus {
   private emitter: EventEmitter;
@@ -420,9 +420,9 @@ export class UuidGenerator implements IdGenerator {
 `;
 }
 
-export function renderNanoidSlugGenerator(): string {
+export function renderNanoidSlugGenerator(importBase: string = '@/Contexts'): string {
   return `import { customRandom, random, urlAlphabet } from 'nanoid';
-import { SlugGenerator } from '@/Contexts/Shared/Domain/SlugGenerator';
+import { SlugGenerator } from '${importBase}/Shared/Domain/SlugGenerator';
 
 export class NanoIdSlugGenerator implements SlugGenerator {
   private readonly generateSlug = customRandom(urlAlphabet, 10, random);
@@ -505,9 +505,9 @@ export function renderPasswordServiceInterface(): string {
 `;
 }
 
-export function renderBcryptPasswordService(): string {
+export function renderBcryptPasswordService(importBase: string = '@/Contexts'): string {
   return `import bcrypt from 'bcrypt';
-import { PasswordService } from '@/Contexts/Shared/Domain/Services/PasswordService';
+import { PasswordService } from '${importBase}/Shared/Domain/Services/PasswordService';
 
 export class BcryptPasswordService implements PasswordService {
   private readonly saltRounds = 10;
@@ -531,9 +531,9 @@ export function renderTokenServiceInterface(): string {
 `;
 }
 
-export function renderJwtTokenService(): string {
+export function renderJwtTokenService(importBase: string = '@/Contexts'): string {
   return `import jwt from 'jsonwebtoken';
-import { TokenService } from '@/Contexts/Shared/Domain/Services/TokenService';
+import { TokenService } from '${importBase}/Shared/Domain/Services/TokenService';
 
 export class JwtTokenService implements TokenService {
   constructor(private readonly secret: string) {}
@@ -560,9 +560,9 @@ export function renderEmailServiceInterface(): string {
 `;
 }
 
-export function renderNodeMailerEmailService(): string {
+export function renderNodeMailerEmailService(importBase: string = '@/Contexts'): string {
   return `import nodemailer from 'nodemailer';
-import { EmailService } from '@/Contexts/Shared/Domain/Services/EmailService';
+import { EmailService } from '${importBase}/Shared/Domain/Services/EmailService';
 
 export class NodeMailerEmailService implements EmailService {
   private transporter: nodemailer.Transporter;

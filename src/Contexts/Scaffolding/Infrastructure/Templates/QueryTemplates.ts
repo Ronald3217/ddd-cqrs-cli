@@ -5,9 +5,9 @@ import { tsType } from './TypeMappings';
 export function renderGetByIdQuery(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
 
-  return `import { Query } from '@/Contexts/Shared/Domain/Queries/Query';
-import { Response } from '@/Contexts/Shared/Domain/Response';
-import { ${entity}Primitives } from '@/Contexts/${context}/${entity}/Domain/${entity}';
+  return `import { Query } from '${names.importBase}/Shared/Domain/Queries/Query';
+import { Response } from '${names.importBase}/Shared/Domain/Response';
+import { ${entity}Primitives } from '${names.importBase}/${context}/${entity}/Domain/${entity}';
 
 export class Get${entity}ByIdResponse implements Response {
   constructor(public readonly data: ${entity}Primitives) {}
@@ -24,10 +24,10 @@ export class Get${entity}ByIdQuery extends Query {
 export function renderGetByIdQueryHandler(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
 
-  return `import { QueryHandler } from '@/Contexts/Shared/Domain/Queries/QueryHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { Get${entity}ByIdQuery, Get${entity}ByIdResponse } from '@/Contexts/${context}/${entity}/Application/Queries/Get${entity}ById/Get${entity}ByIdQuery';
-import { NotFoundError } from '@/Contexts/Shared/Domain/Errors/NotFoundError';
+  return `import { QueryHandler } from '${names.importBase}/Shared/Domain/Queries/QueryHandler';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { Get${entity}ByIdQuery, Get${entity}ByIdResponse } from '${names.importBase}/${context}/${entity}/Application/Queries/Get${entity}ById/Get${entity}ByIdQuery';
+import { NotFoundError } from '${names.importBase}/Shared/Domain/Errors/NotFoundError';
 
 export class Get${entity}ByIdQueryHandler implements QueryHandler<Get${entity}ByIdQuery, Get${entity}ByIdResponse> {
   constructor(private readonly ${entityCamel}Repository: ${entity}Repository) {}
@@ -52,9 +52,9 @@ export function renderGenericQuery(names: EntityNames, action: string, fields: F
   const responseName = `${className}Response`;
   const params = fields.map((f) => `    public readonly ${f.name}?: ${tsType(f.type)},`).join('\n');
 
-  return `import { Query } from '@/Contexts/Shared/Domain/Queries/Query';
-import { Response } from '@/Contexts/Shared/Domain/Response';
-import { ${entity}Primitives } from '@/Contexts/${context}/${entity}/Domain/${entity}';
+  return `import { Query } from '${names.importBase}/Shared/Domain/Queries/Query';
+import { Response } from '${names.importBase}/Shared/Domain/Response';
+import { ${entity}Primitives } from '${names.importBase}/${context}/${entity}/Domain/${entity}';
 
 export class ${responseName} implements Response {
   constructor(public readonly data: ${entity}Primitives) {}
@@ -77,10 +77,10 @@ export function renderGenericQueryHandler(names: EntityNames, action: string, _f
   const responseName = `${className}Response`;
   const handlerClassName = `${className}Handler`;
 
-  return `import { QueryHandler } from '@/Contexts/Shared/Domain/Queries/QueryHandler';
-import { ${entity}Repository } from '@/Contexts/${context}/${entity}/Domain/${entity}Repository';
-import { ${className}, ${responseName} } from '@/Contexts/${context}/${entity}/Application/Queries/${className}/${className}';
-import { NotFoundError } from '@/Contexts/Shared/Domain/Errors/NotFoundError';
+  return `import { QueryHandler } from '${names.importBase}/Shared/Domain/Queries/QueryHandler';
+import { ${entity}Repository } from '${names.importBase}/${context}/${entity}/Domain/${entity}Repository';
+import { ${className}, ${responseName} } from '${names.importBase}/${context}/${entity}/Application/Queries/${className}/${className}';
+import { NotFoundError } from '${names.importBase}/Shared/Domain/Errors/NotFoundError';
 
 export class ${handlerClassName} implements QueryHandler<${className}, ${responseName}> {
   constructor(private readonly ${entityCamel}Repository: ${entity}Repository) {}

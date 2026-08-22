@@ -2,7 +2,7 @@ import type { EntityNames } from '@/Contexts/Scaffolding/Domain/NamingRules';
 
 export function renderInMemoryRepositoryTemplate(names: EntityNames): string {
   const { entity, entityCamel, context } = names;
-  const base = `@/Contexts/${context}/${entity}`;
+  const base = `${names.importBase}/${context}/${entity}`;
 
   return `import { ${entity} } from '${base}/Domain/${entity}';
 import { ${entity}Repository } from '${base}/Domain/${entity}Repository';

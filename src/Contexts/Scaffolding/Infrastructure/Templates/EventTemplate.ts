@@ -19,7 +19,7 @@ export function renderEventTemplate(
 
   const lines: string[] = [];
 
-  lines.push(`import { DomainEvent } from '@/Contexts/Shared/Domain/Events/DomainEvent';`);
+  lines.push(`import { DomainEvent } from '${names.importBase}/Shared/Domain/Events/DomainEvent';`);
   lines.push('');
   lines.push(`export class ${eventName} extends DomainEvent {`);
   lines.push(`  constructor(`);

@@ -48,10 +48,10 @@ export function renderEntityTemplate(names: EntityNames, fields: FieldSpec[]): s
     })
     .join('\n\n');
 
-  return `import { AggregateRoot } from '@/Contexts/Shared/Domain/AggregateRoot';
-import { DocumentId } from '@/Contexts/Shared/Domain/ValueObjects/DocumentId';
-import { DateTime } from '@/Contexts/Shared/Domain/ValueObjects/DateTime';
-import { IdGenerator } from '@/Contexts/Shared/Domain/IdGenerator';
+  return `import { AggregateRoot } from '${names.importBase}/Shared/Domain/AggregateRoot';
+import { DocumentId } from '${names.importBase}/Shared/Domain/ValueObjects/DocumentId';
+import { DateTime } from '${names.importBase}/Shared/Domain/ValueObjects/DateTime';
+import { IdGenerator } from '${names.importBase}/Shared/Domain/IdGenerator';
 
 export interface ${entity}Primitives {
   id: string;
