@@ -145,7 +145,7 @@ export function run(): void {
   program
     .name('ddd-cqrs')
     .description('Portable DDD-CQRS scaffolding generator')
-    .version('0.2.0');
+    .version('0.2.1');
 
   const gen = addHelpHint(program
     .command('gen')
