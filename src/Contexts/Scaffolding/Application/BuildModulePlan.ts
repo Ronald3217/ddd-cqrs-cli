@@ -27,8 +27,8 @@ import { renderControllerTemplate } from '@/Contexts/Scaffolding/Infrastructure/
 import { renderRouterTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Router';
 
 export class BuildModulePlan {
-  build(spec: ModuleSpec, contextsRoot: string): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
+  build(spec: ModuleSpec, contextsRoot: string, importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context, importBase);
     const base = `${contextsRoot}/${names.context}/${names.entity}`;
     const files: PlanFile[] = [];
     const registrations: HandlerRegistration[] = [];
@@ -44,7 +44,7 @@ export class BuildModulePlan {
         bus: 'command',
         entity: names.entity,
         handlerClassName,
-        importPath: `@/Contexts/${names.context}/${names.entity}/${dir}/${handlerClassName}`,
+        importPath: `${importBase}/${names.context}/${names.entity}/${dir}/${handlerClassName}`,
         instantiation,
         variableName: handlerVariableName(handlerClassName),
       });
@@ -57,7 +57,7 @@ export class BuildModulePlan {
         bus: 'query',
         entity: names.entity,
         handlerClassName,
-        importPath: `@/Contexts/${names.context}/${names.entity}/${dir}/${handlerClassName}`,
+        importPath: `${importBase}/${names.context}/${names.entity}/${dir}/${handlerClassName}`,
         instantiation,
         variableName: handlerVariableName(handlerClassName),
       });

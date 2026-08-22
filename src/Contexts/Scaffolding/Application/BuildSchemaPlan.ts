@@ -5,8 +5,8 @@ import type { GenerationPlan } from '@/Contexts/Scaffolding/Application/Plan';
 import { renderSchemaTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/SchemaTemplate';
 
 export class BuildSchemaPlan {
-  build(spec: PieceSpec, contextsRoot: string): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
+  build(spec: PieceSpec, contextsRoot: string, importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context, importBase);
     return {
       files: [
         {

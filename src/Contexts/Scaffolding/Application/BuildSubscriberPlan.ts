@@ -13,8 +13,8 @@ export interface SubscriberSpec {
 }
 
 export class BuildSubscriberPlan {
-  build(spec: SubscriberSpec, contextsRoot: string): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.moduleName, spec.context);
+  build(spec: SubscriberSpec, contextsRoot: string, importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.moduleName, spec.context, importBase);
 
     return {
       files: [

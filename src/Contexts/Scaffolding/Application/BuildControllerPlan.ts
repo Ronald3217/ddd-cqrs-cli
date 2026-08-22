@@ -5,8 +5,8 @@ import type { GenerationPlan, HttpFramework } from '@/Contexts/Scaffolding/Appli
 import { renderControllerTemplate } from '@/Contexts/Scaffolding/Infrastructure/Templates/Controller';
 
 export class BuildControllerPlan {
-  build(spec: PieceSpec, contextsRoot: string, http: HttpFramework = 'express'): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
+  build(spec: PieceSpec, contextsRoot: string, http: HttpFramework = 'express', importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context, importBase);
     const base = `${contextsRoot}/${names.context}/${names.entity}/Infrastructure`;
 
     return {

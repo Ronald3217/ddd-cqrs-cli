@@ -69,6 +69,8 @@ export interface InitOptions {
 export class BuildInitPlan {
   build(options: InitOptions): GenerationPlan {
     const { contextName, projectName, contextsRoot, includeServices = true } = options;
+    // Derive importBase from contextsRoot: src/Contexts → @/Contexts, src/MyContexts → @/MyContexts
+    const importBase = `@/${contextsRoot.replace(/^.*\bsrc\//, '')}`;
     const shared = `${contextsRoot}/Shared`;
     const files: { relPath: string; content: string }[] = [];
 
@@ -81,9 +83,9 @@ export class BuildInitPlan {
     // ────────────────────────────────────────────────────────────────────────
 
     // Domain/Bus
-    addFile(`${shared}/Domain/Bus/CommandBus.ts`, renderCommandBus());
-    addFile(`${shared}/Domain/Bus/QueryBus.ts`, renderQueryBus());
-    addFile(`${shared}/Domain/Bus/EventBus.ts`, renderEventBus());
+    addFile(`${shared}/Domain/Bus/CommandBus.ts`, renderCommandBus(importBase));
+    addFile(`${shared}/Domain/Bus/QueryBus.ts`, renderQueryBus(importBase));
+    addFile(`${shared}/Domain/Bus/EventBus.ts`, renderEventBus(importBase));
 
     // Domain/Commands
     addFile(`${shared}/Domain/Commands/Command.ts`, renderCommand());
@@ -91,11 +93,11 @@ export class BuildInitPlan {
 
     // Domain/Queries
     addFile(`${shared}/Domain/Queries/Query.ts`, renderQuery());
-    addFile(`${shared}/Domain/Queries/QueryHandler.ts`, renderQueryHandler());
+    addFile(`${shared}/Domain/Queries/QueryHandler.ts`, renderQueryHandler(importBase));
 
     // Domain/Events
     addFile(`${shared}/Domain/Events/DomainEvent.ts`, renderDomainEvent());
-    addFile(`${shared}/Domain/Events/DomainEventSubscriber.ts`, renderDomainEventSubscriber());
+    addFile(`${shared}/Domain/Events/DomainEventSubscriber.ts`, renderDomainEventSubscriber(importBase));
 
     // Domain/Core
     addFile(`${shared}/Domain/AggregateRoot.ts`, renderAggregateRoot());
@@ -106,12 +108,12 @@ export class BuildInitPlan {
 
     // Domain/Errors
     addFile(`${shared}/Domain/Errors/index.ts`, renderErrorsIndex());
-    addFile(`${shared}/Domain/Errors/ApiError.ts`, renderApiError());
-    addFile(`${shared}/Domain/Errors/BadRequestError.ts`, renderBadRequestError());
-    addFile(`${shared}/Domain/Errors/ConflictError.ts`, renderConflictError());
-    addFile(`${shared}/Domain/Errors/DatabaseError.ts`, renderDatabaseError());
-    addFile(`${shared}/Domain/Errors/NotFoundError.ts`, renderNotFoundError());
-    addFile(`${shared}/Domain/Errors/UnauthorizedError.ts`, renderUnauthorizedError());
+    addFile(`${shared}/Domain/Errors/ApiError.ts`, renderApiError(importBase));
+    addFile(`${shared}/Domain/Errors/BadRequestError.ts`, renderBadRequestError(importBase));
+    addFile(`${shared}/Domain/Errors/ConflictError.ts`, renderConflictError(importBase));
+    addFile(`${shared}/Domain/Errors/DatabaseError.ts`, renderDatabaseError(importBase));
+    addFile(`${shared}/Domain/Errors/NotFoundError.ts`, renderNotFoundError(importBase));
+    addFile(`${shared}/Domain/Errors/UnauthorizedError.ts`, renderUnauthorizedError(importBase));
 
     // Domain/ValueObjects
     addFile(`${shared}/Domain/ValueObjects/DateTime.ts`, renderDateTimeValueObject());
@@ -122,14 +124,14 @@ export class BuildInitPlan {
     // ────────────────────────────────────────────────────────────────────────
 
     // Infrastructure/Bus
-    addFile(`${shared}/Infrastructure/Bus/InMemoryCommandBus.ts`, renderInMemoryCommandBus());
-    addFile(`${shared}/Infrastructure/Bus/InMemoryQueryBus.ts`, renderInMemoryQueryBus());
-    addFile(`${shared}/Infrastructure/Bus/InMemoryEventBus.ts`, renderInMemoryEventBus());
-    addFile(`${shared}/Infrastructure/Bus/EventEmitterEventBus.ts`, renderEventEmitterEventBus());
+    addFile(`${shared}/Infrastructure/Bus/InMemoryCommandBus.ts`, renderInMemoryCommandBus(importBase));
+    addFile(`${shared}/Infrastructure/Bus/InMemoryQueryBus.ts`, renderInMemoryQueryBus(importBase));
+    addFile(`${shared}/Infrastructure/Bus/InMemoryEventBus.ts`, renderInMemoryEventBus(importBase));
+    addFile(`${shared}/Infrastructure/Bus/EventEmitterEventBus.ts`, renderEventEmitterEventBus(importBase));
 
     // Infrastructure/Core
     addFile(`${shared}/Infrastructure/UuidGenerator.ts`, renderUuidGenerator());
-    addFile(`${shared}/Infrastructure/SlugGenerator.ts`, renderNanoidSlugGenerator());
+    addFile(`${shared}/Infrastructure/SlugGenerator.ts`, renderNanoidSlugGenerator(importBase));
 
     // Infrastructure/config
     addFile(`${shared}/Infrastructure/config/env.ts`, renderEnvConfig());
@@ -144,21 +146,21 @@ export class BuildInitPlan {
 
     if (includeServices) {
       addFile(`${shared}/Domain/Services/PasswordService.ts`, renderPasswordServiceInterface());
-      addFile(`${shared}/Infrastructure/Services/BcryptPasswordService.ts`, renderBcryptPasswordService());
+      addFile(`${shared}/Infrastructure/Services/BcryptPasswordService.ts`, renderBcryptPasswordService(importBase));
       addFile(`${shared}/Domain/Services/TokenService.ts`, renderTokenServiceInterface());
-      addFile(`${shared}/Infrastructure/Services/JwtTokenService.ts`, renderJwtTokenService());
+      addFile(`${shared}/Infrastructure/Services/JwtTokenService.ts`, renderJwtTokenService(importBase));
       addFile(`${shared}/Domain/Services/EmailService.ts`, renderEmailServiceInterface());
-      addFile(`${shared}/Infrastructure/Services/NodeMailerEmailService.ts`, renderNodeMailerEmailService());
+      addFile(`${shared}/Infrastructure/Services/NodeMailerEmailService.ts`, renderNodeMailerEmailService(importBase));
     }
 
     // ────────────────────────────────────────────────────────────────────────
     // Project Root (tsconfig, package.json, Container, server)
     // ────────────────────────────────────────────────────────────────────────
 
-    addFile('tsconfig.json', renderTsConfig(contextName));
+    addFile('tsconfig.json', renderTsConfig(contextName, importBase));
     addFile('package.json', renderPackageJson(projectName));
-    addFile(`src/Apps/Backend/DependencyInjection/Container.ts`, renderContainer(contextName));
-    addFile(`src/Apps/Backend/Server.ts`, renderServerClass());
+    addFile(`src/Apps/Backend/DependencyInjection/Container.ts`, renderContainer(contextName, importBase));
+    addFile(`src/Apps/Backend/Server.ts`, renderServerClass(importBase));
     addFile(`src/Apps/Backend/Start.ts`, renderStartFile());
 
     return {

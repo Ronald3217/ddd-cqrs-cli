@@ -8,8 +8,8 @@ import {
 } from '@/Contexts/Scaffolding/Infrastructure/Templates/QueryTemplates';
 
 export class BuildQueryPlan {
-  build(spec: PieceSpec, contextsRoot: string): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
+  build(spec: PieceSpec, contextsRoot: string, importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context, importBase);
     const className = `${spec.action}${names.entity}Query`;
     const handlerClassName = `${className}Handler`;
     const dir = `${contextsRoot}/${names.context}/${names.entity}/Application/Queries/${className}`;
@@ -30,7 +30,7 @@ export class BuildQueryPlan {
         bus: 'query',
         entity: names.entity,
         handlerClassName,
-        importPath: `@/Contexts/${names.context}/${names.entity}/Application/Queries/${className}/${handlerClassName}`,
+        importPath: `${importBase}/${names.context}/${names.entity}/Application/Queries/${className}/${handlerClassName}`,
         instantiation: `new ${handlerClassName}(${names.entityCamel}Repo)`,
         variableName: handlerVariableName(handlerClassName),
       },

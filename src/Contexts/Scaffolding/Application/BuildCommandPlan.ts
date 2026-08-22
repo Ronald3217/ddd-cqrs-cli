@@ -8,8 +8,8 @@ import {
 } from '@/Contexts/Scaffolding/Infrastructure/Templates/CommandTemplates';
 
 export class BuildCommandPlan {
-  build(spec: PieceSpec, contextsRoot: string): GenerationPlan {
-    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context);
+  build(spec: PieceSpec, contextsRoot: string, importBase: string = '@/Contexts'): GenerationPlan {
+    const names: EntityNames = deriveEntityNames(spec.entityName, spec.context, importBase);
     const className = `${spec.action}${names.entity}Command`;
     const handlerClassName = `${className}Handler`;
     const dir = `${contextsRoot}/${names.context}/${names.entity}/Application/Commands/${className}`;
@@ -30,7 +30,7 @@ export class BuildCommandPlan {
         bus: 'command',
         entity: names.entity,
         handlerClassName,
-        importPath: `@/Contexts/${names.context}/${names.entity}/Application/Commands/${className}/${handlerClassName}`,
+        importPath: `${importBase}/${names.context}/${names.entity}/Application/Commands/${className}/${handlerClassName}`,
         instantiation: `new ${handlerClassName}(${names.entityCamel}Repo)`,
         variableName: handlerVariableName(handlerClassName),
       },
