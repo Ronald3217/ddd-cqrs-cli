@@ -211,13 +211,14 @@ export function run(): void {
   const valueObjectCmd = addHelpHint(gen
     .command('value-object')
     .description('Generate a Value Object class into an existing module')
-    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase. Use "Shared" for global kernel or "BC/Shared" for BC-level shared')
     .requiredOption('--name <voName>', 'Value Object name in PascalCase (e.g. Email, Slug)')
     .requiredOption('--type <type>', 'Value type: string, number, boolean, Date, string[], object'));
   addFieldsOption(valueObjectCmd);
   addCommonOptions(valueObjectCmd);
   addExamples(valueObjectCmd, [
     'gen value-object --module User --name Email --type string',
+    'gen value-object --module Shared --name Email --type string',
     'gen value-object --module BlogPost --name PublishedAt --type Date',
     'gen value-object --module User --name Address --type object --fields "street:string,city:string,country:string"',
   ]);
@@ -226,12 +227,12 @@ export function run(): void {
   const errorCmd = addHelpHint(gen
     .command('error')
     .description('Generate a Domain Error class into an existing module')
-    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase. Use "Shared" for global kernel or "BC/Shared" for BC-level shared')
     .requiredOption('--name <errorName>', 'Error class name in PascalCase (e.g. InvalidCredentialsError)')
     .option('--message <message>', 'Error message', '${name} error')
     .option('--status <code>', 'HTTP status code', '400'));
   addCommonOptions(errorCmd);
-  addExamples(errorCmd, ['gen error --module User --name InvalidCredentialsError --message "Invalid credentials" --status 401', 'gen error --module BlogPost --name SlugTakenError --message "Slug already in use" --status 409']);
+  addExamples(errorCmd, ['gen error --module User --name InvalidCredentialsError --message "Invalid credentials" --status 401', 'gen error --module Shared --name NotFoundError --message "Not found" --status 404', 'gen error --module AdLinksManager/Shared --name LinkNotFoundError --message "Link not found" --status 404']);
   errorCmd.action(handleError);
 
   const entityCmd = addHelpHint(gen
@@ -247,11 +248,11 @@ export function run(): void {
   const eventCmd = addHelpHint(gen
     .command('event')
     .description('Generate a Domain Event class into an existing module')
-    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase. Use "Shared" for global kernel or "BC/Shared" for BC-level shared')
     .requiredOption('--name <eventName>', 'Event name in PascalCase (e.g. LinkCreatedDomainEvent)'));
   addFieldsOption(eventCmd);
   addCommonOptions(eventCmd);
-  addExamples(eventCmd, ['gen event --module Link --name LinkCreatedDomainEvent --fields "title:string,destination:string"', 'gen event --module User --name UserRegisteredDomainEvent --fields "email:string,firstName:string"']);
+  addExamples(eventCmd, ['gen event --module Link --name LinkCreatedDomainEvent --fields "title:string,destination:string"', 'gen event --module Shared --name SystemStartedEvent --fields "timestamp:string"', 'gen event --module AdLinksManager/Shared --name PaymentProcessedEvent --fields "amount:number"']);
   eventCmd.action(handleEvent);
 
   const subscriberCmd = addHelpHint(gen
@@ -268,12 +269,12 @@ export function run(): void {
   const serviceCmd = addHelpHint(gen
     .command('service')
     .description('Generate a Domain Service interface and Infrastructure implementation')
-    .requiredOption('--module <entity>', 'Entity/module name in PascalCase')
+    .requiredOption('--module <entity>', 'Entity/module name in PascalCase. Use "Shared" for global kernel or "BC/Shared" for BC-level shared')
     .requiredOption('--name <serviceName>', 'Service interface name in PascalCase (e.g. PasswordService)')
     .option('--methods <methods>', 'Comma-separated method names (e.g. hash,compare,validate)')
     .option('--impl-name <implName>', 'Implementation class name (default: {Name}Impl, e.g. BcryptPasswordService)'));
   addCommonOptions(serviceCmd);
-  addExamples(serviceCmd, ['gen service --module User --name PasswordService --methods "hash,compare"', 'gen service --module User --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService', 'gen service --module Shared --name AuthMiddleware --methods "handle,validateToken" --impl-name JwtAuthMiddleware']);
+  addExamples(serviceCmd, ['gen service --module User --name PasswordService --methods "hash,compare"', 'gen service --module Shared --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService', 'gen service --module AdLinksManager/Shared --name AuthMiddleware --methods "handle,validateToken" --impl-name JwtAuthMiddleware']);
   serviceCmd.action(handleService);
 
   const repositoryCmd = addHelpHint(gen
@@ -337,8 +338,8 @@ async function handleModule(opts: ModuleCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = ModuleSpec.create(opts.name, opts.fields, resolved.context);
-    const plan = new BuildModulePlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildModulePlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -346,8 +347,8 @@ async function handleCommand(opts: PieceCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('command', opts.module, opts.name as string, opts.fields, resolved.context);
-    const plan = new BuildCommandPlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildCommandPlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -355,8 +356,8 @@ async function handleQuery(opts: PieceCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('query', opts.module, opts.name as string, opts.fields, resolved.context);
-    const plan = new BuildQueryPlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildQueryPlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -365,8 +366,8 @@ async function handleController(opts: ControllerCmdOptions): Promise<void> {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('controller', opts.module, '', opts.fields, resolved.context);
     const http = (opts.http ?? 'express') as HttpFramework;
-    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot, http);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildControllerPlan().build(spec, layout.contextsRoot, http, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -375,8 +376,8 @@ async function handleRouter(opts: RouterCmdOptions): Promise<void> {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('controller', opts.module, '', undefined, resolved.context);
     const http = (opts.http ?? 'express') as HttpFramework;
-    const plan = new BuildRouterPlan().build(spec, layout.contextsRoot, http);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildRouterPlan().build(spec, layout.contextsRoot, http, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -384,8 +385,8 @@ async function handleSchema(opts: SchemaCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('schema', opts.module, '', opts.fields, resolved.context);
-    const plan = new BuildSchemaPlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildSchemaPlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -398,34 +399,43 @@ async function handleValueObject(opts: ValueObjectCmdOptions): Promise<void> {
       throw new ScaffoldingError('Object type requires --fields option');
     }
     
+    // Parse 'BC/Shared' → entityName for validation, full path kept in spec
+    const moduleParts = opts.module.split('/');
+    const entityName = moduleParts.length > 1 ? moduleParts[moduleParts.length - 1] : opts.module;
+
     let spec: PieceSpec;
     
     if (isObjectType) {
       // Object type: pass fields directly, BuildValueObjectPlan will handle it
-      spec = PieceSpec.create('value-object', opts.module, opts.name, opts.fields, resolved.context);
+      spec = PieceSpec.create('value-object', entityName, opts.name, opts.fields, resolved.context);
     } else {
       // Primitive type: create a single 'value' field with the specified type
       const fieldsRaw = `value:${opts.type}`;
-      spec = PieceSpec.create('value-object', opts.module, opts.name, fieldsRaw, resolved.context);
+      spec = PieceSpec.create('value-object', entityName, opts.name, fieldsRaw, resolved.context);
     }
+    // Override entityName with full module path so BuildValueObjectPlan can resolve output location
+    (spec as any).entityName = opts.module;
     
-    const plan = new BuildValueObjectPlan().build(spec, layout.contextsRoot, isObjectType);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildValueObjectPlan().build(spec, layout.contextsRoot, isObjectType, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
 async function handleError(opts: ErrorCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
+    // Parse 'BC/Shared' → moduleName='Shared' for validation, full path kept in spec
+    const moduleParts = opts.module.split('/');
+    const moduleName = moduleParts.length > 1 ? moduleParts[moduleParts.length - 1] : opts.module;
     const errorSpec: ErrorSpec = {
-      moduleName: opts.module,
+      moduleName: opts.module, // full path for BuildErrorPlan output location
       errorName: opts.name,
       message: opts.message,
       statusCode: parseInt(opts.status as any, 10),
       context: resolved.context,
     };
-    const plan = new BuildErrorPlan().build(errorSpec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildErrorPlan().build(errorSpec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -433,17 +443,22 @@ async function handleEntity(opts: EntityCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
     const spec = PieceSpec.create('entity', opts.module, opts.name, opts.fields, resolved.context);
-    const plan = new BuildEntityPlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildEntityPlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
 async function handleEvent(opts: EventCmdOptions): Promise<void> {
   await withErrors(async () => {
     const { resolved, layout } = resolveExecution(opts);
-    const spec = PieceSpec.create('event', opts.module, opts.name, opts.fields, resolved.context);
-    const plan = new BuildEventPlan().build(spec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    // Parse 'BC/Shared' → entityName='Shared' for validation, full path kept in spec
+    const moduleParts = opts.module.split('/');
+    const entityName = moduleParts.length > 1 ? moduleParts[moduleParts.length - 1] : opts.module;
+    const spec = PieceSpec.create('event', entityName, opts.name, opts.fields, resolved.context);
+    // Override entityName with full module path so BuildEventPlan can resolve output location
+    (spec as any).entityName = opts.module;
+    const plan = new BuildEventPlan().build(spec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -458,8 +473,8 @@ async function handleSubscriber(opts: SubscriberCmdOptions): Promise<void> {
       dependencies,
       context: resolved.context,
     };
-    const plan = new BuildSubscriberPlan().build(subscriberSpec, layout.contextsRoot);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildSubscriberPlan().build(subscriberSpec, layout.contextsRoot, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -470,13 +485,13 @@ async function handleService(opts: ServiceCmdOptions): Promise<void> {
       ? opts.methods.split(',').map((m) => m.trim()).filter(Boolean)
       : [];
     const serviceSpec: ServiceSpec = {
-      moduleName: opts.module,
+      moduleName: opts.module, // full path: 'Shared', 'BC/Shared', or module name
       serviceName: opts.name,
       methods,
       context: resolved.context,
     };
-    const plan = new BuildServicePlan().build(serviceSpec, layout.contextsRoot, opts.implName);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildServicePlan().build(serviceSpec, layout.contextsRoot, opts.implName, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -489,8 +504,8 @@ async function handleRepository(opts: RepositoryCmdOptions): Promise<void> {
     const dbs: DbType[] = opts.db
       ? opts.db.split(',').map((d) => d.trim() as DbType).filter(Boolean)
       : ['mongo', 'mysql', 'inmemory'];
-    const plan = new BuildRepositoryPlan().build(spec, layout.contextsRoot, dbs);
-    await execute(plan, resolved, layout.containerPath);
+    const plan = new BuildRepositoryPlan().build(spec, layout.contextsRoot, dbs, layout.importBase);
+    await execute(plan, resolved, layout.containerPath, layout.importBase);
   });
 }
 
@@ -513,7 +528,7 @@ async function handleInit(opts: InitCmdOptions): Promise<void> {
   });
 }
 
-async function execute(plan: GenerationPlan, opts: CommonOptions, containerPath: string | undefined): Promise<void> {
+async function execute(plan: GenerationPlan, opts: CommonOptions, containerPath: string | undefined, importBase: string = '@/Contexts'): Promise<void> {
   const writer = new FileWriter({ force: opts.force, dryRun: opts.dryRun });
   const cwd = process.cwd();
 
@@ -529,7 +544,7 @@ async function execute(plan: GenerationPlan, opts: CommonOptions, containerPath:
   console.log('Container:');
   if (containerPath) {
     const updater = new ContainerUpdater();
-    const containerResult = updater.update(containerPath, plan, { force: opts.force, dryRun: opts.dryRun });
+    const containerResult = updater.update(containerPath, plan, { force: opts.force, dryRun: opts.dryRun }, importBase);
 
     for (const edit of containerResult.edits) {
       console.log(`  ${edit}`);

@@ -32,23 +32,32 @@ ATOMICS
     Required:       --module <entity>  --name <entityName>
     Optional:       --db <mongo,mysql,inmemory>  --context <ctx>  --dry-run  --force
     Example:        ddd-cqrs gen repository --module BlogPost --name BlogPost --db "mongo,mysql"
+    Example:        ddd-cqrs gen repository --module User --name User --db "inmemory"
 
   gen value-object  Generate a Value Object class
     Required:       --module <entity>  --name <voName>  --type <type>
     Optional:       --fields <name:type,...> (for object type)  --context <ctx>  --dry-run  --force
+    --module:       PascalCase name, 'Shared' (global kernel), or 'BC/Shared' (BC-level)
     Types:          string, number, boolean, Date, string[], object
     Example:        ddd-cqrs gen value-object --module User --name Email --type string
+    Example:        ddd-cqrs gen value-object --module Shared --name Email --type string
     Example:        ddd-cqrs gen value-object --module User --name Address --type object --fields "street:string,city:string"
 
   gen error         Generate a Domain Error class
     Required:       --module <entity>  --name <errorName>
     Optional:       --message <msg>  --status <code>  --context <ctx>  --dry-run  --force
+    --module:       PascalCase name, 'Shared' (global kernel), or 'BC/Shared' (BC-level)
     Example:        ddd-cqrs gen error --module User --name InvalidCredentialsError --message "Invalid credentials" --status 401
+    Example:        ddd-cqrs gen error --module Shared --name NotFoundError --message "Not found" --status 404
+    Example:        ddd-cqrs gen error --module AdLinksManager/Shared --name LinkNotFoundError --message "Link not found" --status 404
 
   gen event         Generate a Domain Event class
     Required:       --module <entity>  --name <eventName>
     Optional:       --fields <name:type,...>  --context <ctx>  --dry-run  --force
+    --module:       PascalCase name, 'Shared' (global kernel), or 'BC/Shared' (BC-level)
     Example:        ddd-cqrs gen event --module Link --name LinkCreatedDomainEvent --fields "title:string"
+    Example:        ddd-cqrs gen event --module Shared --name SystemStartedEvent --fields "timestamp:string"
+    Example:        ddd-cqrs gen event --module AdLinksManager/Shared --name PaymentProcessedEvent --fields "amount:number"
 
   gen subscriber    Generate a Domain Event Subscriber
     Required:       --module <entity>  --name <subscriberName>  --event <eventName>
@@ -58,8 +67,10 @@ ATOMICS
   gen service       Generate Domain Service interface + implementation
     Required:       --module <entity>  --name <serviceName>
     Optional:       --methods <method1,method2>  --impl-name <className>  --context <ctx>  --dry-run  --force
+    --module:       PascalCase name, 'Shared' (global kernel), or 'BC/Shared' (BC-level)
     Example:        ddd-cqrs gen service --module User --name PasswordService --methods "hash,compare"
-    Example:        ddd-cqrs gen service --module User --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService
+    Example:        ddd-cqrs gen service --module Shared --name PasswordService --methods "hash,compare" --impl-name BcryptPasswordService
+    Example:        ddd-cqrs gen service --module AdLinksManager/Shared --name AuthService --methods "validate,authenticate" --impl-name JwtAuthService
 
   gen command       Generate a Command and CommandHandler
     Required:       --module <entity>  --name <action>
