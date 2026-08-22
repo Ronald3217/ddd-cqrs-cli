@@ -14,7 +14,7 @@ export interface ContainerEditResult {
   skipped: string[];
 }
 
-const DOMAIN_REPO_IMPORT_RE = /^import \{ \w+Repository \} from '@\/Contexts\/[^']*\/Domain\/\w+Repository';$/;
+const DOMAIN_REPO_IMPORT_RE = /^import \{ \w+Repository \} from '@\/[^']*\/Domain\/\w+Repository';$/;
 const REPO_SECTION_HEADER_RE = /^\/\/ Repositories - /;
 const COMMAND_HEADER_RE = /^\/\/ Command Handlers - /;
 const QUERY_HEADER_RE = /^\/\/ Query Handlers - /;
@@ -29,7 +29,7 @@ const QUERY_BUS_OPEN_RE = /^    this\.queryBus = new InMemoryQueryBus\(\[$/;
 const ARRAY_CLOSE_RE = /^    \]\);$/;
 
 export class ContainerUpdater {
-  update(containerPath: string, plan: GenerationPlan, options: ContainerEditOptions): ContainerEditResult {
+  update(containerPath: string, plan: GenerationPlan, options: ContainerEditOptions, importBase: string = '@/Contexts'): ContainerEditResult {
     const result: ContainerEditResult = { containerPath, changed: false, edits: [], skipped: [] };
 
     if (!existsSync(containerPath)) {
@@ -49,7 +49,7 @@ export class ContainerUpdater {
 
     const addWiring = (wiring: RepositoryWiring): void => {
       const { context, entity, entityCamel } = wiring;
-      const base = `@/Contexts/${context}/${entity}`;
+      const base = `${importBase}/${context}/${entity}`;
 
       const interfaceImport = `import { ${entity}Repository } from '${base}/Domain/${entity}Repository';`;
       if (lines.includes(interfaceImport)) {

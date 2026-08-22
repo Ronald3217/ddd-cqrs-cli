@@ -5,6 +5,7 @@ import { ScaffoldingError } from '@/Contexts/Scaffolding/Domain/ScaffoldingError
 export interface ProjectLayout {
   projectRoot: string;
   contextsRoot: string;
+  importBase: string;
   containerPath?: string;
 }
 
@@ -71,15 +72,28 @@ function parseConfig(configPath: string, filename: string): DddCqrsConfig {
   }
 }
 
+export function deriveImportBase(contextsRootAbs: string, projectRoot: string): string {
+  const rel = path.relative(projectRoot, contextsRootAbs).replace(/\\/g, '/');
+  if (!rel.startsWith('src/')) {
+    throw new ScaffoldingError(
+      `contextsRoot "${rel}" is outside "src/" — the @/* alias cannot resolve it. ` +
+      'Move the contexts under src/ or use a custom tsconfig alias.',
+    );
+  }
+  return `@/${rel.slice('src/'.length)}`;
+}
+
 export function resolveLayout(options: LayoutOptions): ProjectLayout {
   const projectRoot = resolveProjectRoot(process.cwd());
   const contextsRoot = resolveAbsolutePath(options.contextsRoot ?? 'src/Contexts', projectRoot);
   const containerPath = options.container
     ? resolveAbsolutePath(options.container, projectRoot)
     : undefined;
+  const importBase = deriveImportBase(contextsRoot, projectRoot);
   return {
     projectRoot,
     contextsRoot,
+    importBase,
     containerPath,
   };
 }
