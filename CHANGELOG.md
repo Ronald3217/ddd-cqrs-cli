@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-21
+
+### Added
+
+- Shared / BC-Shared module support for atomic generators (`value-object`, `error`, `event`, `service`). Use `--module Shared` for global kernel pieces or `--module BC/Shared` for BC-level shared pieces.
+- `deriveImportBase()` — derives the `@/*` alias base path from `contextsRoot`, so generated imports work with any project layout where contexts live under `src/`.
+- Updated CLI help and examples with Shared / BC-Shared usage patterns.
+
+### Changed
+
+- All templates now use the dynamic `importBase` instead of the hardcoded `@/Contexts/` path prefix.
+- `ContainerUpdater` regex now matches repository imports under any `@/*` alias (not only `@/Contexts/`).
+- Updated release workflow instructions in README.
+
+### Fixed
+
+- Generated files emitted import paths that assumed the default `@/Contexts/` layout, breaking projects with non-standard `contextsRoot` values.
+
 ## [0.2.0] - 2026-08-20
 
 ### Added
@@ -68,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Global Windows binary invoked through the npm shim failed silently (missing shebang); added `#!/usr/bin/env node` to the CLI entry so `ddd-cqrs` runs on Windows.
 
-[unreleased]: https://github.com/Ronald3217/ddd-cqrs-cli/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/Ronald3217/ddd-cqrs-cli/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Ronald3217/ddd-cqrs-cli/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Ronald3217/ddd-cqrs-cli/compare/0.1.1...v0.2.0
 [0.1.1]: https://github.com/Ronald3217/ddd-cqrs-cli/compare/v0.1.0...0.1.1
 [0.1.0]: https://github.com/Ronald3217/ddd-cqrs-cli/releases/tag/v0.1.0
