@@ -64,9 +64,10 @@ export interface EntityNames {
   entityPluralLower: string;
   context: string;
   contextCamel: string;
+  importBase: string;
 }
 
-export function deriveEntityNames(entity: string, context: string): EntityNames {
+export function deriveEntityNames(entity: string, context: string, importBase: string = '@/Contexts'): EntityNames {
   const entityName = assertSingularEntityName(entity, 'Entity name');
   const contextName = assertPascalCase(context, 'Context name');
   return {
@@ -76,6 +77,7 @@ export function deriveEntityNames(entity: string, context: string): EntityNames 
     entityPluralLower: toCamelCase(pluralize(entityName)),
     context: contextName,
     contextCamel: toCamelCase(contextName),
+    importBase,
   };
 }
 
